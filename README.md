@@ -5,17 +5,19 @@ This project investigates the behavior, distribution, and performance of Cloudfl
 ## Research Objectives
 
 We aim to collect a comprehensive dataset to answer the following questions:
-*   **Balancer Variance**: Do different domains (e.g., `chatgpt.com`, `cloudflare.com`, `claude.ai`) resolving to the same PoP use different load balancer pools?
-*   **Geographic Mapping**: How do specific Anycast IPs and colocation centers (Colos) map to specific load balancers (`fl` ID)?
-*   **Protocol Adoption**: Are there differences in how requests are handled across HTTP/1.1, HTTP/2, and HTTP/3?
-*   **Latency Analysis**: How does the choice of protocol or vantage point impact connection latency?
+
+- **Balancer Variance**: Do different domains (e.g., `chatgpt.com`, `cloudflare.com`, `claude.ai`) resolving to the same PoP use different load balancer pools?
+- **Geographic Mapping**: How do specific Anycast IPs and colocation centers (Colos) map to specific load balancers (`fl` ID)?
+- **Protocol Adoption**: Are there differences in how requests are handled across HTTP/1.1, HTTP/2, and HTTP/3?
 
 ## Methodology
 
 ### The Reference Endpoint
+
 Cloudflare exposes a debug endpoint at `/cdn-cgi/trace` which returns connection metadata in a key-value format.
 
 **Example Response:**
+
 ```text
 fl=1034f22              # Balancer ID
 h=cloudflare.com        # Host
@@ -34,37 +36,94 @@ kex=X25519MLKEM768      # Key Exchange
 ```
 
 ### Measurement Strategy
+
 We employ a hybrid measurement strategy to maximize coverage:
 
 1.  **Distributed Measurement (GlobalPing)**
-    *   **Tool**: [GlobalPing API](https://globalping.io/docs/api.globalping.io#overview)
-    *   **Scope**: Worldwide vantage points (filtering by country code).
-    *   **Protocols**: HTTP/1.1, HTTP/2 (GlobalPing limitation).
-    *   **Resources**: ~500 measurements/hour (free tier); scalable with API key rotation.
+
+    - **Tool**: [GlobalPing API](https://globalping.io/docs/api.globalping.io#overview)
+    - **Scope**: Worldwide vantage points (filtering by country code).
+    - **Protocols**: HTTP/1.1, HTTP/2 (GlobalPing limitation).
+    - **Resources**: ~500 measurements/hour (free tier); scalable with API key rotation.
 
 2.  **Local Measurement**
-    *   **Tool**: Local JavaScript agent.
-    *   **Scope**: High-frequency checks from the local network.
-    *   **Protocols**: HTTP/3 (QUIC), HTTP/2, HTTP/1.1.
-    *   **Advantages**: No rate limits, comprehensive protocol support.
+    - **Tool**: Local JavaScript agent.
+    - **Scope**: High-frequency checks from the local network.
+    - **Protocols**: HTTP/3 (QUIC), HTTP/2, HTTP/1.1.
+    - **Advantages**: No rate limits, comprehensive protocol support.
 
 ## Implementation
 
-The measurement tool is written in **JavaScript** and supports two primary modes of operation.
+The measurement tool is written in **JavaScript**
 
 ### CLI Arguments
+
 The program implements the following logic loops and accepts arguments:
-*   **Mode**: `--daemon` (hourly cron) or `--oneshot`.
-*   **Targets**: `--domains` (e.g., `cloudflare.com,chatgpt.com`).
-*   **Protocols**: `--http-versions` (h1, h2, h3).
-*   **Security**: `--tls` (on/off).
-*   **Vantage Points**: `--locations` (ISO country codes for GlobalPing).
-*   **Volume**: `--limit` (tests per measurement batch).
-*   **Keys**: `--keys` (GlobalPing API keys).
+
+- **Targets**: `--hosts` comma seperated list of hosts to test on.
+- **Protocols**: `--http3` enforces http3 usage when passed in. **only applicable to `local` tests**
+- **Volume**: `--runs` number of runs/requests per host. **only applicable to `local` tests**
+- **Vantage Points**: `--locations` comma seperated list of ISO country codes. **only applicable to `globalPing` tests**
+- **Keys**: `--keys` comma seperated list of GlobalPing API keys.
+
+### Running
+
+First ensure you run `npm install` in the `collector` directory to install the necessary dependencies.
+
+There are 2 modes for running, `local` and `globalPing`
+
+#### `local`
+
+This runs the test locally on the given hosts for the given number of runs. This is a good way to discover load balancers available at your current location.
+
+While in the `collector` directory, run as follows
+
+```bash
+npm run run:local -- --hosts=https://cloudflare.com,https://chatgpt.com --runs 3 --http3
+```
+
+You may also build using
+
+```bash
+npm run build:local
+```
+
+And use the built `dist/local.js` to run from anywhere, not limiting being inside this directory.
+
+```bash
+node local.js --hosts=https://cloudflare.com,https://chatgpt.com --runs 3 --http3
+```
+
+#### `globalPing`
+
+This runs the test using GlobalPing in the provided regions. This is a good way to discover load balancer on a global scale. Runs until api keys quota is reached to maximize coverage.
+
+While in the `collector` directory, run as follows
+
+```bash
+npm run run:globalPing -- --hosts=https://cloudflare.com,https://chatgpt.com --locations=DE --keys=<YOUR_API_KEY>
+```
+
+Like the local script, you may also build into a binary to be run from anywhere.
+
+```bash
+npm run build:globalPing
+```
 
 ### Data Output
 
-All responses are parsed, flattened, and appended to a **CSV file** for easy analysis.
+All responses are parsed, flattened, and appended to a **CSV file** for easy analysis. Timestamped files saved in `results/*` directory from where the script is called from
 
-**Target Schema:** TODO
-`timestamp, vantage_point, country, target_domain, protocol, tls_version, balancer_id_fl, colo_id, client_ip, kex, latency_ms`
+**CSV Header Columns (ordered):**
+| Field | Description |
+|------------------|----------------------------|
+| balancerId | Load balancer ID |
+| host | Hostname |
+| clientIp | Client IP Address |
+| timestamp | Request timestamp |
+| scheme | Connection scheme |
+| userAgent | User Agent string |
+| colocationCenter | Data center/colocation ID |
+| httpVersion | HTTP Version used |
+| clientCountry | Country of client |
+| tlsVersion | TLS Version |
