@@ -48,6 +48,11 @@ export function parseTraceResult(result: string): CollectorResult {
   return collectorResult;
 }
 
+export function saveToFile(results: CollectorResult[]): void {
+  const filePath = getResultFilePath();
+  saveResultsToCsv(results, filePath);
+}
+
 export function getResultFilePath(): string {
   const timestamp = new Date().getTime();
   const directory = "results";
