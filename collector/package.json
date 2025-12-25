@@ -16,6 +16,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "globalping": "^0.2.0",
     "minimist": "^1.2.8"
   }
 }
