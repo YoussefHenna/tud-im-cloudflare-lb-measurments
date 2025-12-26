@@ -15,6 +15,14 @@ export interface CollectorResult {
   clientCity: string | null;
   clientAsn: string | null;
   clientNetwork: string | null;
+
+  latencyTotal: string | null;
+  latencyDNS: string | null; // Time to lookup domain name
+  latencyTCP: string | null; // Time to establish TCP connection
+  latencyTLS: string | null; // Time to establish TLS connection (after TCP)
+  latencyFirstByte: string | null; // Time to receive first byte of response (after TLS)
+  latencyDownload: string | null; // Time to receive full response (after first byte)
+
 }
 
 export interface Args {

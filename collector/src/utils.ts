@@ -23,6 +23,13 @@ export function parseTraceResult(result: string): CollectorResult {
     clientCity: null,
     clientAsn: null,
     clientNetwork: null,
+
+    latencyTotal: null,
+    latencyDNS: null,
+    latencyTCP: null,
+    latencyTLS: null,
+    latencyFirstByte: null,
+    latencyDownload: null,
   };
 
   const keyMapping: Record<string, keyof CollectorResult> = {
@@ -82,7 +89,13 @@ export function saveResultsToCsv(results: CollectorResult[], filePath: string, a
     "clientCountry",
     "clientCity",
     "clientAsn",
-    "clientNetwork"
+    "clientNetwork",
+    "latencyTotal",
+    "latencyDNS",
+    "latencyTCP",
+    "latencyTLS",
+    "latencyFirstByte",
+    "latencyDownload",
   ];
 
   let content = "";

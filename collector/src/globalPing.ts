@@ -48,6 +48,13 @@ async function processMeasurementResult(
   traceResult.clientAsn = String(probeInfo.asn);
   traceResult.clientNetwork = probeInfo.network;
 
+  traceResult.latencyTotal = String(httpResult.timings.total);
+  traceResult.latencyDNS = String(httpResult.timings.dns);
+  traceResult.latencyTCP = String(httpResult.timings.tcp);
+  traceResult.latencyTLS = String(httpResult.timings.tls);
+  traceResult.latencyFirstByte = String(httpResult.timings.firstByte);
+  traceResult.latencyDownload = String(httpResult.timings.download);
+
   return traceResult;
 }
 
@@ -233,6 +240,8 @@ async function run() {
       }
     }
   }
+
+  console.log("All measurements completed");
 }
 
 run();
