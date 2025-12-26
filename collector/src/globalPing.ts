@@ -16,19 +16,17 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 async function processMeasurementResult(
   globalping: Globalping<false>,
   measurementId: string
-): Promise<CollectorResult | null> {
+): Promise<CollectorResult> {
   const result = await globalping.awaitMeasurement(measurementId);
   if (!result.ok) {
-    console.error(`Failed to await measurement (${measurementId}): ${result.data.error.message}`);
-    return null;
+    throw new Error(`Failed to await measurement (${measurementId}): ${result.data.error.message}`);
   }
 
   Globalping.assertMeasurementType('http', result.data);
   const results = result.data.results;
 
   if (results.length === 0) {
-    console.warn(`Measurement (${measurementId}) returned no results`);
-    return null;
+    throw new Error(`Measurement (${measurementId}) returned no results`);
   }
 
   // We assume 1 probe per measurement due to 'limit: 1' or reusing rootID
@@ -36,15 +34,12 @@ async function processMeasurementResult(
   const probeInfo = results[0].probe;
 
   if (httpResult.status !== 'finished') {
-    console.warn(`Measurement (${measurementId}) did not finish: ${httpResult.status}`);
-    console.warn(`Raw Output: ${httpResult.rawOutput}`);
-    return null;
+    throw new Error(`Measurement (${measurementId}) did not finish: ${httpResult.status}`);
   }
 
   const body = httpResult.rawBody;
   if (!body) {
-    console.warn(`Measurement (${measurementId}) did not return a trace`);
-    return null;
+    throw new Error(`Measurement (${measurementId}) did not return a trace`);
   }
 
   const traceResult = parseTraceResult(body);
@@ -56,6 +51,41 @@ async function processMeasurementResult(
   return traceResult;
 }
 
+async function createRootMeasurement(
+  globalping: Globalping<false>,
+  host: string,
+  location: string,
+  outputFile: string
+): Promise<string | null> {
+  console.log(`Creating root measurement for ${location}...`);
+  const measurement = await globalping.createMeasurement({
+    type: 'http',
+    target: host,
+    measurementOptions: {
+      request: { path: CLOUDFLARE_LB_PATH, method: 'GET' },
+      protocol: PROTOCOL,
+    },
+    locations: [{ magic: location, limit: 1 }]
+  });
+
+  if (!measurement.ok) {
+    if (measurement.data.error.type === 'rate_limit_exceeded') {
+      console.log("Rate limit exceeded creating root measurement. Waiting 5s...");
+      return null;
+    }
+    throw new Error(`Failed to create root measurement: ${measurement.data.error.message}`);
+  }
+
+  const rootID = measurement.data.id;
+  console.log(`Root measurement created: ${rootID}`);
+
+  // Process root measurement result
+  const rootResult = await processMeasurementResult(globalping, rootID);
+  saveResultsToCsv([rootResult], outputFile, true);
+
+  return rootID;
+}
+
 async function collectFromLocation(
   globalping: Globalping<false>,
   host: string,
@@ -65,50 +95,10 @@ async function collectFromLocation(
 ): Promise<void> {
   console.log(`Starting collection for ${host} from ${location} (Target: ${totalRequests} requests)`);
 
-  // 1. Create root measurement to pin location
   let rootID: string | null = null;
-  // Start with 1 attempt loop for root
-  while (!rootID) {
-    const limits = await globalping.getLimits();
-    if (limits.ok && limits.data.rateLimit.measurements.create.remaining <= 0) {
-      const wait = limits.data.rateLimit.measurements.create.reset + 1;
-      console.log(`Rate limit hit before root measurement. Waiting ${wait}s...`);
-      await sleep(wait * 1000);
-    }
-
-    const measurement = await globalping.createMeasurement({
-      type: 'http',
-      target: host,
-      measurementOptions: {
-        request: { path: CLOUDFLARE_LB_PATH, method: 'GET' },
-        protocol: PROTOCOL,
-      },
-      locations: [{ magic: location, limit: 1 }]
-    });
-
-    if (!measurement.ok) {
-      if (measurement.data.error.type === 'rate_limit_exceeded') {
-        console.log("Rate limit exceeded creating root measurement. Waiting 30s...");
-        await sleep(30000); // Default fallback wait
-        continue;
-      }
-      throw new Error(`Failed to create root measurement: ${measurement.data.error.message}`);
-    }
-    rootID = measurement.data.id;
-  }
-
-  // Process root measurement result
-  console.log(`Root measurement created: ${rootID}`);
-  const rootResult = await processMeasurementResult(globalping, rootID);
-  if (rootResult) {
-    saveResultsToCsv([rootResult], outputFile, true);
-  }
-
-  // Remaining requests
-  let requestsDone = 1;
+  let requestsDone = 0;
 
   while (requestsDone < totalRequests) {
-    // Check limits
     const limits = await globalping.getLimits();
     if (!limits.ok) {
       console.warn("Failed to get limits, waiting 5s...");
@@ -126,10 +116,28 @@ async function collectFromLocation(
       continue;
     }
 
-    console.log(`Rate limit allows ${localRemaining} requests. Proceeding with batch...`);
+    // if we don't have a root measurement, create one
+    if (!rootID) {
+      rootID = await createRootMeasurement(globalping, host, location, outputFile);
+      if (!rootID) {
+        console.log("Failed to create root measurement, waiting 5s...");
+        await sleep(5000);
+        continue;
+      }
+      requestsDone++;
+      if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
+        console.log(`Progress for ${location}: ${requestsDone}/${totalRequests}`);
+      }
+
+      // Consume one limit manually since we just created a measurement (or tried to)
+      localRemaining--;
+      continue;
+    }
+
+    console.log(`Rate limit allows ${localRemaining} requests. Proceeding with batch using rootID ${rootID}...`);
 
     // Inner loop to consume available limits
-    while (localRemaining > 0 && requestsDone < totalRequests) {
+    while (localRemaining > 0 && requestsDone < totalRequests && rootID) {
       try {
         const measurement = await globalping.createMeasurement({
           type: 'http',
@@ -147,6 +155,12 @@ async function collectFromLocation(
             localRemaining = 0; // Force break to outer loop catch
             break;
           }
+          if (Globalping.isHttpStatus(422, measurement)) {
+            // No matching probes available (probe likely went offline)
+            console.log("Root probe unavailable (422). Invalidating rootID...");
+            rootID = null;
+            break; // Break inner loop to recreate root
+          }
           console.warn(`Failed to create measurement: ${measurement.data.error.message}`);
           await sleep(1000); // Short backoff on error
           localRemaining--; // Assume wasted attempt
@@ -163,8 +177,6 @@ async function collectFromLocation(
           if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
             console.log(`Progress for ${location}: ${requestsDone}/${totalRequests}`);
           }
-        } else {
-          // Failed to get result, retry? 
         }
 
       } catch (e) {
