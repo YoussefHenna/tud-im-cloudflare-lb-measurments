@@ -71,7 +71,6 @@ async function createRootMeasurement(
   if (!measurement.ok) {
     if (measurement.data.error.type === 'rate_limit_exceeded') {
       console.log("Rate limit exceeded creating root measurement. Waiting 5s...");
-      await sleep(5000);
       return null;
     }
     throw new Error(`Failed to create root measurement: ${measurement.data.error.message}`);
@@ -120,6 +119,11 @@ async function collectFromLocation(
     // if we don't have a root measurement, create one
     if (!rootID) {
       rootID = await createRootMeasurement(globalping, host, location, outputFile);
+      if (!rootID) {
+        console.log("Failed to create root measurement, waiting 5s...");
+        await sleep(5000);
+        continue;
+      }
       requestsDone++;
       if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
         console.log(`Progress for ${location}: ${requestsDone}/${totalRequests}`);
