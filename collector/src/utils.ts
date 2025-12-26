@@ -55,22 +55,79 @@ export function parseTraceResult(result: string): CollectorResult {
   return collectorResult;
 }
 
-export function saveToFile(results: CollectorResult[]): void {
-  const filePath = getResultFilePath();
+export class Logger {
+  private logFile: string;
+
+  constructor(logFile: string) {
+    this.logFile = logFile;
+    // Create file if not exists
+    if (!fs.existsSync(logFile)) {
+      fs.writeFileSync(logFile, "");
+    }
+  }
+
+  private write(level: string, message: string, ...args: any[]) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] [${level}] ${message} ${args.length ? JSON.stringify(args) : ''}`;
+
+    // Console output
+    if (level === 'ERROR') {
+      console.error(logMessage);
+    } else if (level === 'WARN') {
+      console.warn(logMessage);
+    } else {
+      console.log(logMessage);
+    }
+
+    // File output
+    fs.appendFileSync(this.logFile, logMessage + "\n");
+  }
+
+  log(message: string, ...args: any[]) {
+    this.write('INFO', message, ...args);
+  }
+
+  warn(message: string, ...args: any[]) {
+    this.write('WARN', message, ...args);
+  }
+
+  error(message: string, ...args: any[]) {
+    this.write('ERROR', message, ...args);
+  }
+}
+
+export function distributeList<T>(items: T[], bucketCount: number): T[][] {
+  const buckets: T[][] = Array.from({ length: bucketCount }, () => []);
+  items.forEach((item, index) => {
+    buckets[index % bucketCount].push(item);
+  });
+  return buckets;
+}
+
+export function saveToFile(results: CollectorResult[], filePath: string): void {
   saveResultsToCsv(results, filePath);
 }
 
-export function getResultFilePath(): string {
+export function getResultFilePath(suffix: string = "results"): string {
   const timestamp = new Date().getTime();
   const directory = "results";
   if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory);
   }
-  return `${directory}/${timestamp}_results.csv`;
+  return `${directory}/${timestamp}_${suffix}.csv`;
+}
+
+export function getLogFilePath(suffix: string): string {
+  const timestamp = new Date().getTime();
+  const directory = "results";
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory);
+  }
+  return `${directory}/${timestamp}_${suffix}.log`;
 }
 
 export function saveResultsToCsv(results: CollectorResult[], filePath: string, append: boolean = true): void {
-  if (results.length === 0) {
+  if (results.length === 0 && append && fs.existsSync(filePath)) {
     return;
   }
 
@@ -104,13 +161,15 @@ export function saveResultsToCsv(results: CollectorResult[], filePath: string, a
     content += headerKeys.join(",") + "\n";
   }
 
-  content += results
-    .map((result) =>
-      headerKeys
-        .map((key) => result[key] ?? "null")
-        .join(",")
-    )
-    .join("\n") + "\n";
+  if (results.length > 0) {
+    content += results
+      .map((result) =>
+        headerKeys
+          .map((key) => result[key] ?? "null")
+          .join(",")
+      )
+      .join("\n") + "\n";
+  }
 
   fs.appendFileSync(filePath, content);
 }
