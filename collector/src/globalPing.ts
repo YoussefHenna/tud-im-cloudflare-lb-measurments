@@ -240,6 +240,8 @@ async function run() {
       }
     }
   }
+
+  console.log("All measurements completed");
 }
 
 run();
