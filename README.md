@@ -110,6 +110,11 @@ Like the local script, you may also build into a binary to be run from anywhere.
 npm run build:globalPing
 ```
 
+##### Modes
+Standard `globalPing` selects one probe on the region and runs all request on that single probe to get as many LB instances visible from that probe.
+
+Sequential mode `npm run run:globalPingSeq` will run through all probes of the regions sequentially, each run/request from another probe. Use sequantial to uncover more load balancer across the region, use standard for more targeted discovery of a single LB.
+
 ### Data Output
 
 All responses are parsed, flattened, and appended to a **CSV file** for easy analysis. Timestamped files saved in `results/*` directory from where the script is called from
