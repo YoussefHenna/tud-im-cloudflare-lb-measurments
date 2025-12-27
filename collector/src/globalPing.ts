@@ -8,21 +8,22 @@ import {
   saveResultsToCsv,
 } from "./utils";
 
-const CLOUDFLARE_LB_PATH = "/cdn-cgi/trace";
+export const CLOUDFLARE_LB_PATH = "/cdn-cgi/trace";
 /*
 From GlobalPing docs:
 - HTTP: HTTP/1.1 without TLS
 - HTTPS: HTTP/1.1 with TLS
 - HTTP2: HTTP/2 with TLS
 */
-const PROTOCOL = "HTTP2";
+export const PROTOCOL = "HTTP2";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
-async function processMeasurementResult(
+export async function processMeasurementResults(
   globalping: Globalping<false>,
   measurementId: string,
-): Promise<CollectorResult> {
+): Promise<CollectorResult[]> {
   const result = await globalping.awaitMeasurement(measurementId);
   if (!result.ok) {
     throw new Error(
@@ -37,35 +38,42 @@ async function processMeasurementResult(
     throw new Error(`Measurement (${measurementId}) returned no results`);
   }
 
-  // We assume 1 probe per measurement due to 'limit: 1' or reusing rootID
-  const httpResult = results[0].result;
-  const probeInfo = results[0].probe;
+  const parsedResults = await Promise.all(
+    results.map(async (result) => {
+      const httpResult = result.result;
+      const probeInfo = result.probe;
 
-  if (httpResult.status !== "finished") {
-    throw new Error(
-      `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
-    );
-  }
+      if (httpResult.status !== "finished") {
+        throw new Error(
+          `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
+        );
+      }
 
-  const body = httpResult.rawBody;
-  if (!body) {
-    throw new Error(`Measurement (${measurementId}) did not return a trace`);
-  }
+      const body = httpResult.rawBody;
+      if (!body) {
+        throw new Error(
+          `Measurement (${measurementId}) did not return a trace`,
+        );
+      }
 
-  const traceResult = parseTraceResult(body);
-  traceResult.clientCountry = probeInfo.country;
-  traceResult.clientCity = probeInfo.city;
-  traceResult.clientAsn = String(probeInfo.asn);
-  traceResult.clientNetwork = probeInfo.network;
+      const traceResult = parseTraceResult(body);
+      traceResult.clientCountry = probeInfo.country;
+      traceResult.clientCity = probeInfo.city;
+      traceResult.clientAsn = String(probeInfo.asn);
+      traceResult.clientNetwork = probeInfo.network;
 
-  traceResult.latencyTotal = String(httpResult.timings.total);
-  traceResult.latencyDNS = String(httpResult.timings.dns);
-  traceResult.latencyTCP = String(httpResult.timings.tcp);
-  traceResult.latencyTLS = String(httpResult.timings.tls);
-  traceResult.latencyFirstByte = String(httpResult.timings.firstByte);
-  traceResult.latencyDownload = String(httpResult.timings.download);
+      traceResult.latencyTotal = String(httpResult.timings.total);
+      traceResult.latencyDNS = String(httpResult.timings.dns);
+      traceResult.latencyTCP = String(httpResult.timings.tcp);
+      traceResult.latencyTLS = String(httpResult.timings.tls);
+      traceResult.latencyFirstByte = String(httpResult.timings.firstByte);
+      traceResult.latencyDownload = String(httpResult.timings.download);
 
-  return traceResult;
+      return traceResult;
+    }),
+  );
+
+  return parsedResults;
 }
 
 async function createRootMeasurement(
@@ -101,8 +109,8 @@ async function createRootMeasurement(
   console.log(`Root measurement created: ${rootID}`);
 
   // Process root measurement result
-  const rootResult = await processMeasurementResult(globalping, rootID);
-  saveResultsToCsv([rootResult], outputFile, true);
+  const rootResults = await processMeasurementResults(globalping, rootID);
+  saveResultsToCsv(rootResults, outputFile, true);
 
   return rootID;
 }
@@ -208,12 +216,12 @@ async function collectFromLocation(
         // Limit consumed
         localRemaining--;
 
-        const result = await processMeasurementResult(
+        const results = await processMeasurementResults(
           globalping,
           measurement.data.id,
         );
-        if (result) {
-          saveResultsToCsv([result], outputFile, true);
+        if (results) {
+          saveResultsToCsv(results, outputFile, true);
           requestsDone++;
           if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
             console.log(

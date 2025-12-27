@@ -4,14 +4,17 @@
   "scripts": {
     "build:local": "./node_modules/.bin/esbuild src/local.ts --bundle --outfile=dist/local.js --platform=node",
     "build:globalPing": "./node_modules/.bin/esbuild src/globalPing.ts --bundle --outfile=dist/globalPing.js --platform=node",
+    "build:globalPingSeq": "./node_modules/.bin/esbuild src/globalPingSeq.ts --bundle --outfile=dist/globalPingSeq.js --platform=node",
     "run:local": "npm run build:local && node dist/local.js",
     "run:globalPing": "npm run build:globalPing && node dist/globalPing.js",
+    "run:globalPingSeq": "npm run build:globalPingSeq && node dist/globalPingSeq.js ",
     "format": "prettier --write \"src/**/*.{ts,js}\""
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/lodash": "^4.17.21",
     "@types/node": "^25.0.3",
     "esbuild": "0.27.2",
     "prettier": "^3.7.4",
@@ -19,6 +22,7 @@
   },
   "dependencies": {
     "globalping": "^0.2.0",
+    "lodash.uniqby": "^4.7.0",
     "minimist": "^1.2.8"
   }
 }
