@@ -1,5 +1,5 @@
 import { CollectorResult } from "./types";
-import { Globalping } from "globalping";
+import { Globalping, Probe, ProbeLocation } from "globalping";
 import {
   getArgs,
   getTraceUrl,
@@ -19,10 +19,10 @@ const PROTOCOL = "HTTP2";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function processMeasurementResult(
+async function processMeasurementResults(
   globalping: Globalping<false>,
   measurementId: string,
-): Promise<CollectorResult> {
+): Promise<CollectorResult[]> {
   const result = await globalping.awaitMeasurement(measurementId);
   if (!result.ok) {
     throw new Error(
@@ -37,44 +37,54 @@ async function processMeasurementResult(
     throw new Error(`Measurement (${measurementId}) returned no results`);
   }
 
-  // We assume 1 probe per measurement due to 'limit: 1' or reusing rootID
-  const httpResult = results[0].result;
-  const probeInfo = results[0].probe;
+  const parsedResults = await Promise.all(
+    results.map(async (result) => {
+      const httpResult = result.result;
+      const probeInfo = result.probe;
 
-  if (httpResult.status !== "finished") {
-    throw new Error(
-      `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
-    );
-  }
+      if (httpResult.status !== "finished") {
+        throw new Error(
+          `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
+        );
+      }
 
-  const body = httpResult.rawBody;
-  if (!body) {
-    throw new Error(`Measurement (${measurementId}) did not return a trace`);
-  }
+      const body = httpResult.rawBody;
+      if (!body) {
+        throw new Error(
+          `Measurement (${measurementId}) did not return a trace`,
+        );
+      }
 
-  const traceResult = parseTraceResult(body);
-  traceResult.clientCountry = probeInfo.country;
-  traceResult.clientCity = probeInfo.city;
-  traceResult.clientAsn = String(probeInfo.asn);
-  traceResult.clientNetwork = probeInfo.network;
+      const traceResult = parseTraceResult(body);
+      traceResult.clientCountry = probeInfo.country;
+      traceResult.clientCity = probeInfo.city;
+      traceResult.clientAsn = String(probeInfo.asn);
+      traceResult.clientNetwork = probeInfo.network;
 
-  traceResult.latencyTotal = String(httpResult.timings.total);
-  traceResult.latencyDNS = String(httpResult.timings.dns);
-  traceResult.latencyTCP = String(httpResult.timings.tcp);
-  traceResult.latencyTLS = String(httpResult.timings.tls);
-  traceResult.latencyFirstByte = String(httpResult.timings.firstByte);
-  traceResult.latencyDownload = String(httpResult.timings.download);
+      traceResult.latencyTotal = String(httpResult.timings.total);
+      traceResult.latencyDNS = String(httpResult.timings.dns);
+      traceResult.latencyTCP = String(httpResult.timings.tcp);
+      traceResult.latencyTLS = String(httpResult.timings.tls);
+      traceResult.latencyFirstByte = String(httpResult.timings.firstByte);
+      traceResult.latencyDownload = String(httpResult.timings.download);
 
-  return traceResult;
+      return traceResult;
+    }),
+  );
+
+  return parsedResults;
 }
 
-async function createRootMeasurement(
+async function createMeasurement(
   globalping: Globalping<false>,
   host: string,
-  location: string,
+  location: ProbeLocation,
   outputFile: string,
 ): Promise<string | null> {
-  console.log(`Creating root measurement for ${location}...`);
+  console.log(
+    `Creating measurement for ${location.city} - ${location.network}...`,
+  );
+
   const measurement = await globalping.createMeasurement({
     type: "http",
     target: host,
@@ -82,18 +92,22 @@ async function createRootMeasurement(
       request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
       protocol: PROTOCOL,
     },
-    locations: [{ magic: location, limit: 1 }],
+    locations: [
+      {
+        city: location.city,
+        network: location.network,
+        limit: 1,
+      },
+    ],
   });
 
   if (!measurement.ok) {
     if (measurement.data.error.type === "rate_limit_exceeded") {
-      console.log(
-        "Rate limit exceeded creating root measurement. Waiting 5s...",
-      );
+      console.log("Rate limit exceeded creating measurement. Waiting 5s...");
       return null;
     }
     throw new Error(
-      `Failed to create root measurement: ${measurement.data.error.message}`,
+      `Failed to create measurement: ${measurement.data.error.message}`,
     );
   }
 
@@ -101,8 +115,8 @@ async function createRootMeasurement(
   console.log(`Root measurement created: ${rootID}`);
 
   // Process root measurement result
-  const rootResult = await processMeasurementResult(globalping, rootID);
-  saveResultsToCsv([rootResult], outputFile, true);
+  const results = await processMeasurementResults(globalping, rootID);
+  saveResultsToCsv(results, outputFile, true);
 
   return rootID;
 }
@@ -113,13 +127,22 @@ async function collectFromLocation(
   location: string,
   totalRequests: number,
   outputFile: string,
+  availableProbes: Probe[],
 ): Promise<void> {
   console.log(
     `Starting collection for ${host} from ${location} (Target: ${totalRequests} requests)`,
   );
 
-  let rootID: string | null = null;
   let requestsDone = 0;
+
+  const probesOfLocation = availableProbes.filter(
+    (probe) =>
+      probe.location.asn.toString() === location ||
+      probe.location.city === location ||
+      probe.location.country === location ||
+      probe.location.region === location ||
+      probe.location.continent === location,
+  );
 
   while (requestsDone < totalRequests) {
     const limits = await globalping.getLimits();
@@ -141,86 +164,33 @@ async function collectFromLocation(
       continue;
     }
 
-    // if we don't have a root measurement, create one
-    if (!rootID) {
-      rootID = await createRootMeasurement(
-        globalping,
-        host,
-        location,
-        outputFile,
-      );
-      if (!rootID) {
-        console.log("Failed to create root measurement, waiting 5s...");
-        await sleep(5000);
-        continue;
-      }
-      requestsDone++;
-      if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
-        console.log(
-          `Progress for ${location}: ${requestsDone}/${totalRequests}`,
-        );
-      }
-
-      // Consume one limit manually since we just created a measurement (or tried to)
-      localRemaining--;
-      continue;
-    }
-
-    console.log(
-      `Rate limit allows ${localRemaining} requests. Proceeding with batch using rootID ${rootID}...`,
-    );
-
     // Inner loop to consume available limits
-    while (localRemaining > 0 && requestsDone < totalRequests && rootID) {
+    while (localRemaining > 0 && requestsDone < totalRequests) {
       try {
-        const measurement = await globalping.createMeasurement({
-          type: "http",
-          target: host,
-          measurementOptions: {
-            request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
-            protocol: PROTOCOL,
-          },
-          locations: rootID,
-        });
+        // Pick random probe
+        const randomProbe =
+          probesOfLocation[Math.floor(Math.random() * probesOfLocation.length)];
 
-        if (!measurement.ok) {
-          if (measurement.data.error.type === "rate_limit_exceeded") {
-            console.log(
-              "Rate limit exceeded during batch. Refreshing limits...",
-            );
-            localRemaining = 0; // Force break to outer loop catch
-            break;
-          }
-          if (Globalping.isHttpStatus(422, measurement)) {
-            // No matching probes available (probe likely went offline)
-            console.log("Root probe unavailable (422). Invalidating rootID...");
-            rootID = null;
-            break; // Break inner loop to recreate root
-          }
-          console.warn(
-            `Failed to create measurement: ${measurement.data.error.message}`,
-          );
-          await sleep(1000); // Short backoff on error
-          localRemaining--; // Assume wasted attempt
+        const measurementID = await createMeasurement(
+          globalping,
+          host,
+          randomProbe.location,
+          outputFile,
+        );
+        if (!measurementID) {
+          console.log("Failed to create measurement, waiting 5s...");
+          await sleep(5000);
           continue;
         }
-
-        // Limit consumed
-        localRemaining--;
-
-        const result = await processMeasurementResult(
-          globalping,
-          measurement.data.id,
-        );
-        if (result) {
-          saveResultsToCsv([result], outputFile, true);
-          requestsDone++;
-          if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
-            console.log(
-              `Progress for ${location}: ${requestsDone}/${totalRequests}`,
-            );
-          }
+        requestsDone += 1;
+        if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
+          console.log(
+            `Progress for ${location}: ${requestsDone}/${totalRequests}`,
+          );
         }
+
+        // Consume limit since we just created a measurement (or tried to)
+        localRemaining -= 1;
       } catch (e) {
         console.error("Error in batch loop:", e);
         await sleep(1000);
@@ -253,17 +223,31 @@ async function run() {
   });
 
   const runs = args.numberOfRuns || 1;
+
   const outputFile = getResultFilePath();
   console.log(`Saving results to: ${outputFile}`);
 
   // Initialize file with header
   saveResultsToCsv([], outputFile, false);
 
+  const availableProbes = await globalping.listProbes();
+  if (!availableProbes.ok) {
+    console.error("Failed to list probes:", availableProbes.data);
+    process.exit(1);
+  }
+
   for (const host of args.hosts) {
     // Iterate over all provided locations separately
     for (const location of args.locations) {
       try {
-        await collectFromLocation(globalping, host, location, runs, outputFile);
+        await collectFromLocation(
+          globalping,
+          host,
+          location,
+          runs,
+          outputFile,
+          availableProbes.data,
+        );
       } catch (e) {
         console.error(
           `Failed to collect from location ${location} for host ${host}:`,
