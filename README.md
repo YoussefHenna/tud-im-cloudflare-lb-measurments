@@ -62,7 +62,7 @@ The program implements the following logic loops and accepts arguments:
 
 - **Targets**: `--hosts` comma seperated list of hosts to test on.
 - **Protocols**: `--http3` enforces http3 usage when passed in. **only applicable to `local` tests**
-- **Volume**: `--runs` number of runs/requests per host. **only applicable to `local` tests**
+- **Volume**: `--runs` number of runs/requests per host.
 - **Vantage Points**: `--locations` comma seperated list of ISO country codes. **only applicable to `globalPing` tests**
 - **Keys**: `--keys` comma seperated list of GlobalPing API keys.
 
@@ -96,7 +96,7 @@ node local.js --hosts=https://cloudflare.com,https://chatgpt.com --runs 3 --http
 
 #### `globalPing`
 
-This runs the test using GlobalPing in the provided regions. This is a good way to discover load balancer on a global scale. Runs until api keys quota is reached to maximize coverage.
+This runs the test using GlobalPing in the provided regions. This is a good way to discover load balancer on a global scale.
 
 While in the `collector` directory, run as follows
 
