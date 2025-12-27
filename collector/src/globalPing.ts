@@ -17,7 +17,8 @@ From GlobalPing docs:
 */
 export const PROTOCOL = "HTTP2";
 
-export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function processMeasurementResults(
   globalping: Globalping<false>,

@@ -7,8 +7,13 @@ import {
   getResultFilePath,
   saveResultsToCsv,
 } from "./utils";
-import { PROTOCOL, sleep, processMeasurementResults, CLOUDFLARE_LB_PATH } from "./globalPing";
-
+import {
+  PROTOCOL,
+  sleep,
+  processMeasurementResults,
+  CLOUDFLARE_LB_PATH,
+} from "./globalPing";
+import { uniqBy } from "lodash";
 
 async function createMeasurement(
   globalping: Globalping<false>,
@@ -71,13 +76,17 @@ async function collectFromLocation(
   let requestsDone = 0;
   let currentProbIndex = 0;
 
-  const probesOfLocation = availableProbes.filter(
-    (probe) =>
-      probe.location.asn.toString() === location ||
-      probe.location.city === location ||
-      probe.location.country === location ||
-      probe.location.region === location ||
-      probe.location.continent === location,
+  const probesOfLocation = uniqBy(
+    availableProbes.filter(
+      (probe) =>
+        probe.location.asn.toString() === location ||
+        probe.location.city === location ||
+        probe.location.country === location ||
+        probe.location.region === location ||
+        probe.location.continent === location,
+    ),
+    // Limit to only one probe per same city and network
+    (probe) => probe.location.city + probe.location.network,
   );
 
   while (requestsDone < totalRequests) {
