@@ -1,28 +1,36 @@
 import { CollectorResult } from "./types";
-import { Globalping } from 'globalping';
-import { getArgs, getTraceUrl, parseTraceResult, getResultFilePath, saveResultsToCsv } from "./utils";
+import { Globalping } from "globalping";
+import {
+  getArgs,
+  getTraceUrl,
+  parseTraceResult,
+  getResultFilePath,
+  saveResultsToCsv,
+} from "./utils";
 
-const CLOUDFLARE_LB_PATH = '/cdn-cgi/trace';
+const CLOUDFLARE_LB_PATH = "/cdn-cgi/trace";
 /*
 From GlobalPing docs:
 - HTTP: HTTP/1.1 without TLS
 - HTTPS: HTTP/1.1 with TLS
 - HTTP2: HTTP/2 with TLS
 */
-const PROTOCOL = 'HTTP2';
+const PROTOCOL = "HTTP2";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function processMeasurementResult(
   globalping: Globalping<false>,
-  measurementId: string
+  measurementId: string,
 ): Promise<CollectorResult> {
   const result = await globalping.awaitMeasurement(measurementId);
   if (!result.ok) {
-    throw new Error(`Failed to await measurement (${measurementId}): ${result.data.error.message}`);
+    throw new Error(
+      `Failed to await measurement (${measurementId}): ${result.data.error.message}`,
+    );
   }
 
-  Globalping.assertMeasurementType('http', result.data);
+  Globalping.assertMeasurementType("http", result.data);
   const results = result.data.results;
 
   if (results.length === 0) {
@@ -33,8 +41,10 @@ async function processMeasurementResult(
   const httpResult = results[0].result;
   const probeInfo = results[0].probe;
 
-  if (httpResult.status !== 'finished') {
-    throw new Error(`Measurement (${measurementId}) did not finish: ${httpResult.status}`);
+  if (httpResult.status !== "finished") {
+    throw new Error(
+      `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
+    );
   }
 
   const body = httpResult.rawBody;
@@ -62,25 +72,29 @@ async function createRootMeasurement(
   globalping: Globalping<false>,
   host: string,
   location: string,
-  outputFile: string
+  outputFile: string,
 ): Promise<string | null> {
   console.log(`Creating root measurement for ${location}...`);
   const measurement = await globalping.createMeasurement({
-    type: 'http',
+    type: "http",
     target: host,
     measurementOptions: {
-      request: { path: CLOUDFLARE_LB_PATH, method: 'GET' },
+      request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
       protocol: PROTOCOL,
     },
-    locations: [{ magic: location, limit: 1 }]
+    locations: [{ magic: location, limit: 1 }],
   });
 
   if (!measurement.ok) {
-    if (measurement.data.error.type === 'rate_limit_exceeded') {
-      console.log("Rate limit exceeded creating root measurement. Waiting 5s...");
+    if (measurement.data.error.type === "rate_limit_exceeded") {
+      console.log(
+        "Rate limit exceeded creating root measurement. Waiting 5s...",
+      );
       return null;
     }
-    throw new Error(`Failed to create root measurement: ${measurement.data.error.message}`);
+    throw new Error(
+      `Failed to create root measurement: ${measurement.data.error.message}`,
+    );
   }
 
   const rootID = measurement.data.id;
@@ -98,9 +112,11 @@ async function collectFromLocation(
   host: string,
   location: string,
   totalRequests: number,
-  outputFile: string
+  outputFile: string,
 ): Promise<void> {
-  console.log(`Starting collection for ${host} from ${location} (Target: ${totalRequests} requests)`);
+  console.log(
+    `Starting collection for ${host} from ${location} (Target: ${totalRequests} requests)`,
+  );
 
   let rootID: string | null = null;
   let requestsDone = 0;
@@ -118,14 +134,21 @@ async function collectFromLocation(
 
     if (localRemaining <= 0) {
       const wait = createLimit.reset + 1;
-      console.log(`Rate limit reached (${requestsDone}/${totalRequests} done). Waiting ${wait}s...`);
+      console.log(
+        `Rate limit reached (${requestsDone}/${totalRequests} done). Waiting ${wait}s...`,
+      );
       await sleep(wait * 1000);
       continue;
     }
 
     // if we don't have a root measurement, create one
     if (!rootID) {
-      rootID = await createRootMeasurement(globalping, host, location, outputFile);
+      rootID = await createRootMeasurement(
+        globalping,
+        host,
+        location,
+        outputFile,
+      );
       if (!rootID) {
         console.log("Failed to create root measurement, waiting 5s...");
         await sleep(5000);
@@ -133,7 +156,9 @@ async function collectFromLocation(
       }
       requestsDone++;
       if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
-        console.log(`Progress for ${location}: ${requestsDone}/${totalRequests}`);
+        console.log(
+          `Progress for ${location}: ${requestsDone}/${totalRequests}`,
+        );
       }
 
       // Consume one limit manually since we just created a measurement (or tried to)
@@ -141,24 +166,28 @@ async function collectFromLocation(
       continue;
     }
 
-    console.log(`Rate limit allows ${localRemaining} requests. Proceeding with batch using rootID ${rootID}...`);
+    console.log(
+      `Rate limit allows ${localRemaining} requests. Proceeding with batch using rootID ${rootID}...`,
+    );
 
     // Inner loop to consume available limits
     while (localRemaining > 0 && requestsDone < totalRequests && rootID) {
       try {
         const measurement = await globalping.createMeasurement({
-          type: 'http',
+          type: "http",
           target: host,
           measurementOptions: {
-            request: { path: CLOUDFLARE_LB_PATH, method: 'GET' },
+            request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
             protocol: PROTOCOL,
           },
           locations: rootID,
         });
 
         if (!measurement.ok) {
-          if (measurement.data.error.type === 'rate_limit_exceeded') {
-            console.log("Rate limit exceeded during batch. Refreshing limits...");
+          if (measurement.data.error.type === "rate_limit_exceeded") {
+            console.log(
+              "Rate limit exceeded during batch. Refreshing limits...",
+            );
             localRemaining = 0; // Force break to outer loop catch
             break;
           }
@@ -168,7 +197,9 @@ async function collectFromLocation(
             rootID = null;
             break; // Break inner loop to recreate root
           }
-          console.warn(`Failed to create measurement: ${measurement.data.error.message}`);
+          console.warn(
+            `Failed to create measurement: ${measurement.data.error.message}`,
+          );
           await sleep(1000); // Short backoff on error
           localRemaining--; // Assume wasted attempt
           continue;
@@ -177,15 +208,19 @@ async function collectFromLocation(
         // Limit consumed
         localRemaining--;
 
-        const result = await processMeasurementResult(globalping, measurement.data.id);
+        const result = await processMeasurementResult(
+          globalping,
+          measurement.data.id,
+        );
         if (result) {
           saveResultsToCsv([result], outputFile, true);
           requestsDone++;
           if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
-            console.log(`Progress for ${location}: ${requestsDone}/${totalRequests}`);
+            console.log(
+              `Progress for ${location}: ${requestsDone}/${totalRequests}`,
+            );
           }
         }
-
       } catch (e) {
         console.error("Error in batch loop:", e);
         await sleep(1000);
@@ -228,15 +263,12 @@ async function run() {
     // Iterate over all provided locations separately
     for (const location of args.locations) {
       try {
-        await collectFromLocation(
-          globalping,
-          host,
-          location,
-          runs,
-          outputFile
-        );
+        await collectFromLocation(globalping, host, location, runs, outputFile);
       } catch (e) {
-        console.error(`Failed to collect from location ${location} for host ${host}:`, e);
+        console.error(
+          `Failed to collect from location ${location} for host ${host}:`,
+          e,
+        );
       }
     }
   }

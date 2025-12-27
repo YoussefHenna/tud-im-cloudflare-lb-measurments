@@ -69,7 +69,11 @@ export function getResultFilePath(): string {
   return `${directory}/${timestamp}_results.csv`;
 }
 
-export function saveResultsToCsv(results: CollectorResult[], filePath: string, append: boolean = true): void {
+export function saveResultsToCsv(
+  results: CollectorResult[],
+  filePath: string,
+  append: boolean = true,
+): void {
   if (results.length === 0) {
     return;
   }
@@ -104,13 +108,10 @@ export function saveResultsToCsv(results: CollectorResult[], filePath: string, a
     content += headerKeys.join(",") + "\n";
   }
 
-  content += results
-    .map((result) =>
-      headerKeys
-        .map((key) => result[key] ?? "null")
-        .join(",")
-    )
-    .join("\n") + "\n";
+  content +=
+    results
+      .map((result) => headerKeys.map((key) => result[key] ?? "null").join(","))
+      .join("\n") + "\n";
 
   fs.appendFileSync(filePath, content);
 }

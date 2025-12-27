@@ -22,7 +22,6 @@ export interface CollectorResult {
   latencyTLS: string | null; // Time to establish TLS connection (after TCP)
   latencyFirstByte: string | null; // Time to receive first byte of response (after TLS)
   latencyDownload: string | null; // Time to receive full response (after first byte)
-
 }
 
 export interface Args {
