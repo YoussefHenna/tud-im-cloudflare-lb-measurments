@@ -14,6 +14,7 @@ model LoadBalancer {
   colocationCenter  String   @map("colocation_center")
   lastChecked       DateTime @default(now()) @map("last_checked")
 
+  @@index([country])
   @@map("load_balancer")
 }
 
