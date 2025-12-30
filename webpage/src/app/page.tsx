@@ -16,6 +16,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black p-8">
       <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-foreground">
+          Cloudflare Load Balancer Discovery
+        </h1>
+
+        <p className="text-md text-zinc-600 dark:text-zinc-400 mb-6">
+          This is a tool that is part of a research project that attempts to map
+          the Cloudflare Load Balancer network. A large portion of load
+          balancers were discovered through an internal experiment and exposed
+          to the public here. Additionally the tool allows you to run a test
+          from your end and contribute to the discovery of more load balancers.
+          For more information on the project read the full report here (TODO:
+          Add link)
+        </p>
+
+        <p className="text-md text-zinc-600 dark:text-zinc-400 mb-6">
+          Credits to: Anton Manakin & Youssef Henna (Technische Universität
+          Dresden)
+        </p>
+
         <h1 className="text-3xl font-bold mb-6 text-foreground">Run Test</h1>
         <RunTest />
 
