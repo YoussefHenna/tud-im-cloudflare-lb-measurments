@@ -111,6 +111,7 @@ npm run build:globalPing
 ```
 
 ##### Modes
+
 Standard `globalPing` selects one probe on the region and runs all request on that single probe to get as many LB instances visible from that probe.
 
 Sequential mode `npm run run:globalPingSeq` will run through all probes of the regions sequentially, each run/request from another probe. Use sequantial to uncover more load balancer across the region, use standard for more targeted discovery of a single LB.
@@ -132,3 +133,18 @@ All responses are parsed, flattened, and appended to a **CSV file** for easy ana
 | httpVersion | HTTP Version used |
 | clientCountry | Country of client |
 | tlsVersion | TLS Version |
+
+### Web Tool
+
+Under the `webpage` directory there is a simple webpage that allows displaying a simplified version of the data as well as run a simple version of the test locally from the browser. Additionally allows saving results to the larger data set.
+
+#### Running
+
+- First ensure you run `npm install` in the `webpage` directory to install the necessary dependencies.
+- Add a `DATABASE_URL` env that points to the database.
+- Run `npm run prisma:generate` to generate types from the DB schema.
+- Run using `npm run dev`
+
+### Fresh Database
+
+If starting from a fresh database, run `npm run prisma:migrate` to add the required tables to your database. Then run `npm run prisma:generate` again to ensure types are properly generated
