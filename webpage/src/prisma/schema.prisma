@@ -1,0 +1,20 @@
+datasource db {
+  provider  = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+model LoadBalancer {
+  id                String   @id
+  ipAddress         String   @map("ip_address")
+  country           String
+  colocationCenter  String   @map("colocation_center")
+  lastChecked       DateTime @default(now()) @map("last_checked")
+
+  @@index([country])
+  @@map("load_balancer")
+}
+
