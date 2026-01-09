@@ -43,9 +43,10 @@ async function createMeasurement(
       console.log("Rate limit exceeded creating measurement. Waiting 5s...");
       return null;
     }
-    throw new Error(
+    console.error(
       `Failed to create measurement: ${measurement.data.error.message}`,
     );
+    return null;
   }
 
   const rootID = measurement.data.id;
@@ -106,6 +107,7 @@ async function collectFromLocation(
     while (localRemaining > 0 && currentProbIndex < probesOfLocation.length) {
       try {
         const currentProbe = probesOfLocation[currentProbIndex];
+        currentProbIndex++;
 
         const measurementID = await createMeasurement(
           globalping,
@@ -119,7 +121,6 @@ async function collectFromLocation(
           continue;
         }
         requestsDone += 1;
-        currentProbIndex++;
 
         if (
           requestsDone % 10 === 0 ||
