@@ -136,6 +136,8 @@ All responses are parsed, flattened, and appended to a **CSV file** for easy ana
 
 ### Web Tool
 
+Hosted on https://tud-im-cloudflare-lb-measurments.vercel.app/
+
 Under the `webpage` directory there is a simple webpage that allows displaying a simplified version of the data as well as run a simple version of the test locally from the browser. Additionally allows saving results to the larger data set.
 
 #### Running
