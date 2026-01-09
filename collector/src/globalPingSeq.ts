@@ -6,14 +6,11 @@ import {
   parseTraceResult,
   getResultFilePath,
   saveResultsToCsv,
-} from "./utils";
-import {
-  PROTOCOL,
   sleep,
   processMeasurementResults,
   CLOUDFLARE_LB_PATH,
-} from "./globalPing";
-import { uniqBy } from "lodash";
+  PROTOCOL,
+} from "./utils";
 
 async function createMeasurement(
   globalping: Globalping<false>,
@@ -52,7 +49,6 @@ async function createMeasurement(
   }
 
   const rootID = measurement.data.id;
-  console.log(`Root measurement created: ${rootID}`);
 
   // Process root measurement result
   const results = await processMeasurementResults(globalping, rootID);
@@ -64,32 +60,29 @@ async function createMeasurement(
 async function collectFromLocation(
   globalping: Globalping<false>,
   host: string,
-  location: string,
-  totalRequests: number,
+  location: string | null,
   outputFile: string,
   availableProbes: Probe[],
 ): Promise<void> {
+  const probesOfLocation = location
+    ? availableProbes.filter(
+        (probe) =>
+          probe.location.asn.toString() === location ||
+          probe.location.city === location ||
+          probe.location.country === location ||
+          probe.location.region === location ||
+          probe.location.continent === location,
+      )
+    : availableProbes;
+
   console.log(
-    `Starting collection for ${host} from ${location} (Target: ${totalRequests} requests)`,
+    `Starting collection for ${host} from ${location ?? "All locations"} (Target: ${probesOfLocation.length} requests)`,
   );
 
   let requestsDone = 0;
   let currentProbIndex = 0;
 
-  const probesOfLocation = uniqBy(
-    availableProbes.filter(
-      (probe) =>
-        probe.location.asn.toString() === location ||
-        probe.location.city === location ||
-        probe.location.country === location ||
-        probe.location.region === location ||
-        probe.location.continent === location,
-    ),
-    // Limit to only one probe per same city and network
-    (probe) => probe.location.city + probe.location.network,
-  );
-
-  while (requestsDone < totalRequests) {
+  while (currentProbIndex < probesOfLocation.length) {
     const limits = await globalping.getLimits();
     if (!limits.ok) {
       console.warn("Failed to get limits, waiting 5s...");
@@ -103,21 +96,16 @@ async function collectFromLocation(
     if (localRemaining <= 0) {
       const wait = createLimit.reset + 1;
       console.log(
-        `Rate limit reached (${requestsDone}/${totalRequests} done). Waiting ${wait}s...`,
+        `Rate limit reached (${requestsDone}/${probesOfLocation.length} done). Waiting ${wait}s...`,
       );
       await sleep(wait * 1000);
       continue;
     }
 
     // Inner loop to consume available limits
-    while (localRemaining > 0 && requestsDone < totalRequests) {
+    while (localRemaining > 0 && currentProbIndex < probesOfLocation.length) {
       try {
         const currentProbe = probesOfLocation[currentProbIndex];
-
-        currentProbIndex++;
-        if (currentProbIndex >= probesOfLocation.length) {
-          currentProbIndex = 0;
-        }
 
         const measurementID = await createMeasurement(
           globalping,
@@ -131,9 +119,14 @@ async function collectFromLocation(
           continue;
         }
         requestsDone += 1;
-        if (requestsDone % 10 === 0 || requestsDone === totalRequests) {
+        currentProbIndex++;
+
+        if (
+          requestsDone % 10 === 0 ||
+          requestsDone === probesOfLocation.length
+        ) {
           console.log(
-            `Progress for ${location}: ${requestsDone}/${totalRequests}`,
+            `Progress for ${location}: ${requestsDone}/${probesOfLocation.length}`,
           );
         }
 
@@ -161,16 +154,9 @@ async function run() {
     process.exit(1);
   }
 
-  if (!args.locations || args.locations.length === 0) {
-    console.error("No locations provided");
-    process.exit(1);
-  }
-
   const globalping = new Globalping({
     auth: args.globalPingApiKeys[0],
   });
-
-  const runs = args.numberOfRuns || 1;
 
   const outputFile = getResultFilePath();
   console.log(`Saving results to: ${outputFile}`);
@@ -185,22 +171,32 @@ async function run() {
   }
 
   for (const host of args.hosts) {
-    // Iterate over all provided locations separately
-    for (const location of args.locations) {
-      try {
-        await collectFromLocation(
-          globalping,
-          host,
-          location,
-          runs,
-          outputFile,
-          availableProbes.data,
-        );
-      } catch (e) {
-        console.error(
-          `Failed to collect from location ${location} for host ${host}:`,
-          e,
-        );
+    if (!args.locations || args.locations.length === 0) {
+      // No locations provided, go through all probes
+      await collectFromLocation(
+        globalping,
+        host,
+        null,
+        outputFile,
+        availableProbes.data,
+      );
+    } else {
+      // Iterate over all provided locations separately
+      for (const location of args.locations) {
+        try {
+          await collectFromLocation(
+            globalping,
+            host,
+            location,
+            outputFile,
+            availableProbes.data,
+          );
+        } catch (e) {
+          console.error(
+            `Failed to collect from location ${location} for host ${host}:`,
+            e,
+          );
+        }
       }
     }
   }

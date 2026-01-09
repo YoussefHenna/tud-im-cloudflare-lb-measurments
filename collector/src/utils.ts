@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import type { Args, CollectorResult } from "./types";
+import Globalping from "globalping";
 
 export function getTraceUrl(host: string): string {
   return `${host}/cdn-cgi/trace`;
@@ -126,4 +127,72 @@ export function getArgs(): Args {
     globalPingApiKeys: args.keys?.split(","),
     locations: args.locations?.split(","),
   };
+}
+
+export const CLOUDFLARE_LB_PATH = "/cdn-cgi/trace";
+/*
+From GlobalPing docs:
+- HTTP: HTTP/1.1 without TLS
+- HTTPS: HTTP/1.1 with TLS
+- HTTP2: HTTP/2 with TLS
+*/
+export const PROTOCOL = "HTTP2";
+
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function processMeasurementResults(
+  globalping: Globalping<false>,
+  measurementId: string,
+): Promise<CollectorResult[]> {
+  const result = await globalping.awaitMeasurement(measurementId);
+  if (!result.ok) {
+    throw new Error(
+      `Failed to await measurement (${measurementId}): ${result.data.error.message}`,
+    );
+  }
+
+  Globalping.assertMeasurementType("http", result.data);
+  const results = result.data.results;
+
+  if (results.length === 0) {
+    throw new Error(`Measurement (${measurementId}) returned no results`);
+  }
+
+  const parsedResults = await Promise.all(
+    results.map(async (result) => {
+      const httpResult = result.result;
+      const probeInfo = result.probe;
+
+      if (httpResult.status !== "finished") {
+        throw new Error(
+          `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
+        );
+      }
+
+      const body = httpResult.rawBody;
+      if (!body) {
+        throw new Error(
+          `Measurement (${measurementId}) did not return a trace`,
+        );
+      }
+
+      const traceResult = parseTraceResult(body);
+      traceResult.clientCountry = probeInfo.country;
+      traceResult.clientCity = probeInfo.city;
+      traceResult.clientAsn = String(probeInfo.asn);
+      traceResult.clientNetwork = probeInfo.network;
+
+      traceResult.latencyTotal = String(httpResult.timings.total);
+      traceResult.latencyDNS = String(httpResult.timings.dns);
+      traceResult.latencyTCP = String(httpResult.timings.tcp);
+      traceResult.latencyTLS = String(httpResult.timings.tls);
+      traceResult.latencyFirstByte = String(httpResult.timings.firstByte);
+      traceResult.latencyDownload = String(httpResult.timings.download);
+
+      return traceResult;
+    }),
+  );
+
+  return parsedResults;
 }
