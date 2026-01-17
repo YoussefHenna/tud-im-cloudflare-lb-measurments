@@ -12,7 +12,8 @@ export function parseTraceResult(result: string): CollectorResult {
 
     balancerId: null,
     balancerIp: null,
-    balancerCountry: null,
+    clientIpAccordingCloudflare: null,
+    clientCountryAccordingCloudflare: null,
     balancerColocationCenter: null,
 
     targetDomain: null,
@@ -36,12 +37,12 @@ export function parseTraceResult(result: string): CollectorResult {
   const keyMapping: Record<string, keyof CollectorResult> = {
     fl: "balancerId",
     h: "targetDomain",
-    ip: "balancerIp",
+    ip: "clientIpAccordingCloudflare",
     ts: "timestamp",
     visit_scheme: "scheme",
     colo: "balancerColocationCenter",
     http: "httpVersion",
-    loc: "balancerCountry",
+    loc: "clientCountryAccordingCloudflare",
     tls: "tlsVersion",
   };
 
@@ -178,6 +179,8 @@ export async function processMeasurementResults(
       }
 
       const traceResult = parseTraceResult(body);
+      traceResult.balancerIp = httpResult.resolvedAddress;
+
       traceResult.clientCountry = probeInfo.country;
       traceResult.clientCity = probeInfo.city;
       traceResult.clientAsn = String(probeInfo.asn);
