@@ -42,14 +42,14 @@ export default function Home() {
           This is a map representing the detected Cloudflare colocation centers
           and the number of load balancers detected in each colocation center.
           Data is based on initial measurments and does not adapt to newly
-          discovered load balancers through the tool below.
+          discovered load balancers through the tool provided here.
         </p>
         <iframe
           src="https://www.google.com/maps/d/u/0/embed?mid=1sr53r4ETbnh1vTBYsPPWMw4CAq7Xraw&ehbc=2E312F&noprof=1"
           style={{ width: "100%", height: "700px" }}
         ></iframe>
 
-        <h1 className="text-3xl font-bold mb-6 text-foreground">All Data</h1>
+        <h1 className="text-3xl font-bold mb-6 text-foreground mt-6">All Data</h1>
         <LoadBalancerTable />
 
         <button
