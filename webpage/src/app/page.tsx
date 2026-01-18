@@ -4,14 +4,13 @@ import LoadBalancerTable from "@/components/LoadBalancerTable";
 import RunTest from "@/components/RunTest";
 
 export default function Home() {
-  const handleDownloadCSV = () => {
-    const url = "/full_combined_fixed.csv";
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "full_combined_fixed.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadCSV = async () => {
+    const response = await fetch("/api/download-csv");
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    }
   };
 
   return (
@@ -36,10 +35,21 @@ export default function Home() {
           Dresden)
         </p>
 
-        <h1 className="text-3xl font-bold mb-6 text-foreground">Run Test</h1>
         <RunTest />
 
-        <h1 className="text-3xl font-bold mb-6 text-foreground">All Data</h1>
+        <h1 className="text-3xl font-bold mb-6 text-foreground">Map</h1>
+        <p className="text-md text-zinc-600 dark:text-zinc-400 mb-6">
+          This is a map representing the detected Cloudflare colocation centers
+          and the number of load balancers detected in each colocation center.
+          Data is based on initial measurments and does not adapt to newly
+          discovered load balancers through the tool provided here.
+        </p>
+        <iframe
+          src="https://www.google.com/maps/d/u/0/embed?mid=1sr53r4ETbnh1vTBYsPPWMw4CAq7Xraw&ehbc=2E312F&noprof=1"
+          style={{ width: "100%", height: "700px" }}
+        ></iframe>
+
+        <h1 className="text-3xl font-bold mb-6 text-foreground mt-6">All Data</h1>
         <LoadBalancerTable />
 
         <button
