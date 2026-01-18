@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1768025569.793,649f55,198.98.48.26,US,EWR,cloudflare.com,https,http/2,TLSv1.3,US,Staten Island,53667,FranTech Solutions,25,5,2,7,10,1
 1768025570.278,50f271,188.119.191.157,RO,OTP,cloudflare.com,https,http/2,TLSv1.3,RO,Oradea,211462,Andrei Tiberiu Holt,61,11,11,17,20,2
 1768025571.622,903f59,45.136.59.56,KZ,DME,cloudflare.com,https,http/2,TLSv1.3,KZ,Aktau,208450,Megahost Kazakhstan TOO,243,75,38,78,50,2

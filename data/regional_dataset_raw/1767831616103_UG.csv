@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767831623.275,519f2,137.63.148.30,UG,NBO,cloudflare.com,https,http/2,TLSv1.3,UG,Kampala,327687,Research and Education Network for Uganda,552,18,21,39,454,20
 1767831624.393,519f2,137.63.148.30,UG,NBO,cloudflare.com,https,http/2,TLSv1.3,UG,Kampala,327687,Research and Education Network for Uganda,83,2,22,31,27,1
 1767831626.005,519f3,137.63.148.30,UG,NBO,cloudflare.com,https,http/2,TLSv1.3,UG,Kampala,327687,Research and Education Network for Uganda,102,2,23,38,38,1

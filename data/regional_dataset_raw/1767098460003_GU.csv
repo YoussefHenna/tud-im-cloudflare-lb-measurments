@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767098460.448,279f6,168.123.138.170,GU,GUM,cloudflare.com,https,http/2,TLSv1.3,GU,Dededo Village,395400,University of Guam,9,null,null,null,4,1
 1767098461.552,279f4,168.123.138.170,GU,GUM,cloudflare.com,https,http/2,TLSv1.3,GU,Dededo Village,395400,University of Guam,16,null,null,null,3,1
 1767098462.705,279f7,168.123.138.170,GU,GUM,cloudflare.com,https,http/2,TLSv1.3,GU,Dededo Village,395400,University of Guam,16,null,null,null,3,1

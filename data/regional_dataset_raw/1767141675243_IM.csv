@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767141675.527,989f85,217.23.167.228,IM,LHR,cloudflare.com,https,http/2,TLSv1.3,IM,Douglas,15766,Domicilium (IOM),47,null,null,null,22,2
 1767141676.602,985f52,217.23.167.228,IM,LHR,cloudflare.com,https,http/2,TLSv1.3,IM,Douglas,15766,Domicilium (IOM),83,null,null,null,21,1
 1767141677.172,793f152,217.23.167.228,IM,LHR,cloudflare.com,https,http/2,TLSv1.3,IM,Douglas,15766,Domicilium (IOM),83,null,null,null,21,1

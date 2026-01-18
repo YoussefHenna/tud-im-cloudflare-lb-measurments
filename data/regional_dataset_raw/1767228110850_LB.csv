@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767228112.2,150f18,194.246.91.160,LB,BEY,cloudflare.com,https,http/2,TLSv1.3,LB,Sidon,39402,Ferrari-Networks,22,null,null,null,7,3
 1767228114.045,150f17,194.246.91.160,LB,BEY,cloudflare.com,https,http/2,TLSv1.3,LB,Sidon,39402,Ferrari-Networks,31,null,null,null,6,1
 1767228114.299,150f17,194.246.91.160,LB,BEY,cloudflare.com,https,http/2,TLSv1.3,LB,Sidon,39402,Ferrari-Networks,29,null,null,null,6,1

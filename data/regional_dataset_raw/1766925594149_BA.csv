@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1766925594.401,114f307,185.164.34.198,BA,VIE,cloudflare.com,https,http/2,TLSv1.3,BA,Novi Travnik,200698,Globalhost,54,null,null,null,20,7
 1766925595.584,721f83,185.164.34.198,BA,VIE,cloudflare.com,https,http/2,TLSv1.3,BA,Novi Travnik,200698,Globalhost,129,null,null,null,20,2
 1766925596.565,992f51,185.164.34.198,BA,VIE,cloudflare.com,https,http/2,TLSv1.3,BA,Novi Travnik,200698,Globalhost,137,null,null,null,34,1

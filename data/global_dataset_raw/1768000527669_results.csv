@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1768000528.564,933f73,78.47.127.78,DE,FRA,cloudflare.com,https,http/2,TLSv1.3,DE,Falkenstein,24940,Hetzner Online,31,1,6,13,10,1
 1768000529.154,725f88,213.143.120.114,AT,VIE,cloudflare.com,https,http/2,TLSv1.3,AT,Vienna,29287,Wien Energie,21,3,2,8,7,1
 1768000530.264,785f189,198.27.74.9,CA,YYZ,cloudflare.com,https,http/2,TLSv1.3,CA,Beauharnois,16276,OVH,41,2,8,18,12,1

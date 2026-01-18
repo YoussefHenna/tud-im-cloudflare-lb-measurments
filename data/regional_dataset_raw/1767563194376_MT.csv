@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767566432.342,977f91,77.25.128.130,MT,MXP,cloudflare.com,https,http/2,TLSv1.3,MT,San Pawl il-Bahar,33874,EPIC Communications,58,null,null,null,28,1
 1767566433.438,39f229,77.25.128.130,MT,MXP,cloudflare.com,https,http/2,TLSv1.3,MT,San Pawl il-Bahar,33874,EPIC Communications,135,null,null,null,34,1
 1767566434.006,977f9,77.25.128.130,MT,MXP,cloudflare.com,https,http/2,TLSv1.3,MT,San Pawl il-Bahar,33874,EPIC Communications,138,null,null,null,38,1

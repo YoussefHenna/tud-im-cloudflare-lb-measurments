@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767804111.334,998f77,160.250.246.30,VN,SIN,cloudflare.com,https,http/2,TLSv1.3,VN,Ho Chi Minh City,135918,VIET DIGITAL TECHNOLOGY,179,44,38,44,51,2
 1767804111.938,740f117,160.250.246.30,VN,SIN,cloudflare.com,https,http/2,TLSv1.3,VN,Ho Chi Minh City,135918,VIET DIGITAL TECHNOLOGY,185,31,46,53,53,2
 1767804112.984,410f568,160.250.246.30,VN,SIN,cloudflare.com,https,http/2,TLSv1.3,VN,Ho Chi Minh City,135918,VIET DIGITAL TECHNOLOGY,149,43,29,36,39,2

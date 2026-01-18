@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767660851.322,704f104,160.242.100.201,NA,JNB,cloudflare.com,https,http/2,TLSv1.3,NA,Windhoek,33763,Paratus Telecommunications,142,23,33,36,49,1
 1767660852.682,45f146,160.242.100.201,NA,JNB,cloudflare.com,https,http/2,TLSv1.3,NA,Windhoek,33763,Paratus Telecommunications,113,0,32,36,45,0
 1767660853.243,45f203,160.242.100.201,NA,JNB,cloudflare.com,https,http/2,TLSv1.3,NA,Windhoek,33763,Paratus Telecommunications,109,0,32,40,37,0

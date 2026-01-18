@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767788986.136,1032f45,77.95.1.244,TJ,ARN,cloudflare.com,https,http/2,TLSv1.3,TJ,Dushanbe,43030,Tajik Academician Research and Educational Network,354,64,82,92,114,2
 1767788987.182,87f566,77.95.1.244,TJ,DME,cloudflare.com,https,http/2,TLSv1.3,TJ,Dushanbe,43030,Tajik Academician Research and Educational Network,248,1,60,93,93,1
 1767788987.708,128f279,77.95.1.244,TJ,ARN,cloudflare.com,https,http/2,TLSv1.3,TJ,Dushanbe,43030,Tajik Academician Research and Educational Network,245,1,77,84,82,1

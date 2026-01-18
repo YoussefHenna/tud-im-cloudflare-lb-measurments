@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1766882377.895,113f72,102.216.253.5,AO,CPT,cloudflare.com,https,http/2,TLSv1.3,AO,Luanda,329007,ELENDE - TECNOLOGIAS DE INFORMACAO - COMERCIO E SERVICOS,166,null,null,null,66,9
 1766882378.941,113f79,102.216.253.5,AO,CPT,cloudflare.com,https,http/2,TLSv1.3,AO,Luanda,329007,ELENDE - TECNOLOGIAS DE INFORMACAO - COMERCIO E SERVICOS,308,null,null,null,59,4
 1766882380.055,113f81,102.216.253.5,AO,CPT,cloudflare.com,https,http/2,TLSv1.3,AO,Luanda,329007,ELENDE - TECNOLOGIAS DE INFORMACAO - COMERCIO E SERVICOS,305,null,null,null,63,3

@@ -26,15 +26,15 @@ const seedDB = async () => {
       ({
         timestamp,
         balancerId,
-        clientIpAccodingCloudflare,
-        clientCountryAccodingCloudflare,
+        clientIpAccordingCloudflare,
+        clientCountryAccordingCloudflare,
         balancerColocationCenter,
       }) => {
         dataToAdd.push({
           id: balancerId,
           lastChecked: new Date(Number(timestamp) * 1000),
-          ipAddress: clientIpAccodingCloudflare,
-          country: clientCountryAccodingCloudflare,
+          ipAddress: clientIpAccordingCloudflare,
+          country: clientCountryAccordingCloudflare,
           colocationCenter: balancerColocationCenter,
         });
       }

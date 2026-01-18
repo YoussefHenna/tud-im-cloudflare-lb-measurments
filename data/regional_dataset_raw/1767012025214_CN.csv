@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767012026.45,1232f103,124.223.114.18,CN,SJC,cloudflare.com,https,http/2,TLSv1.3,CN,Shanghai,45090,Shenzhen Tencent Computer Systems Company,339,null,null,null,171,1
 1767012027.721,466f178,124.223.114.18,CN,SJC,cloudflare.com,https,http/2,TLSv1.3,CN,Shanghai,45090,Shenzhen Tencent Computer Systems Company,604,null,null,null,151,1
 1767012029.794,466f189,124.223.114.18,CN,SJC,cloudflare.com,https,http/2,TLSv1.3,CN,Shanghai,45090,Shenzhen Tencent Computer Systems Company,1051,null,null,null,151,1

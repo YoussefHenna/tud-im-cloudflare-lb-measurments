@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1766968812.192,729f90,131.0.196.232,BO,GRU,cloudflare.com,https,http/2,TLSv1.3,BO,La Paz,27882,Telefonica Celular de Bolivia,134,null,null,null,62,4
 1766968813.302,1058f56,131.0.196.232,BO,GRU,cloudflare.com,https,http/2,TLSv1.3,BO,La Paz,27882,Telefonica Celular de Bolivia,274,null,null,null,54,2
 1766968814.88,728f13,131.0.196.232,BO,GRU,cloudflare.com,https,http/2,TLSv1.3,BO,La Paz,27882,Telefonica Celular de Bolivia,246,null,null,null,63,2

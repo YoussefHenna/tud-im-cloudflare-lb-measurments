@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767680334.328,611f4,103.213.125.200,NP,KTM,cloudflare.com,https,http/2,TLSv1.3,NP,Kathmandu,45424,Network Pool Allocated for HONS Network,112,1,1,7,83,20
 1767680334.831,611f13,103.213.125.200,NP,KTM,cloudflare.com,https,http/2,TLSv1.3,NP,Kathmandu,45424,Network Pool Allocated for HONS Network,13,1,1,5,5,1
 1767680335.924,611f13,103.213.125.200,NP,KTM,cloudflare.com,https,http/2,TLSv1.3,NP,Kathmandu,45424,Network Pool Allocated for HONS Network,11,0,1,6,4,0

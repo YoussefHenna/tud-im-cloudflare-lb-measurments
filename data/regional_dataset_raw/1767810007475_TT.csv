@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767810008.094,368f288,131.72.77.207,TT,MIA,cloudflare.com,https,http/2,TLSv1.3,TT,Princes Town,264811,AIR LINK COMMUNICATIONS,293,48,46,59,137,3
 1767810009.333,368f309,131.72.77.207,TT,MIA,cloudflare.com,https,http/2,TLSv1.3,TT,Princes Town,264811,AIR LINK COMMUNICATIONS,181,2,46,59,58,16
 1767810010.161,368f272,131.72.77.207,TT,MIA,cloudflare.com,https,http/2,TLSv1.3,TT,Princes Town,264811,AIR LINK COMMUNICATIONS,161,1,46,60,53,1

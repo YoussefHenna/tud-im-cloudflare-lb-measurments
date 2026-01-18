@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1767878114.425,26f270,113.11.240.232,VU,SYD,cloudflare.com,https,http/2,TLSv1.3,VU,Port-Vila,9249,Telecom Vanuatu,260,6,53,86,102,13
 1767878115.964,491f40,113.11.240.232,VU,SYD,cloudflare.com,https,http/2,TLSv1.3,VU,Port-Vila,9249,Telecom Vanuatu,209,4,52,85,65,3
 1767878118.333,493f191,113.11.240.232,VU,SYD,cloudflare.com,https,http/2,TLSv1.3,VU,Port-Vila,9249,Telecom Vanuatu,205,4,52,84,63,2

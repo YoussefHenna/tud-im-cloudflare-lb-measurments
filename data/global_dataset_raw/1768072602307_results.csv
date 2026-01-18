@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1768072602.679,1179f59,109.230.238.250,DE,AMS,cloudflare.com,https,http/2,TLSv1.3,DE,Frankfurt,206996,ZAP-Hosting,44,7,4,13,18,2
 1768072603.261,89f71,45.81.152.227,ES,BCN,cloudflare.com,https,http/2,TLSv1.3,ES,Barcelona,216392,SERGI GARCIA JIMENEZ,40,15,2,10,12,1
 1768072605.292,472f483,95.216.14.222,FI,FRA,cloudflare.com,https,http/2,TLSv1.3,FI,Helsinki,24940,Hetzner Online,101,23,20,29,28,1

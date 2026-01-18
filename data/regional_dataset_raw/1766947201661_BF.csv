@@ -1,4 +1,4 @@
-timestamp,balancerId,clientIpAccodingCloudflare,clientCountryAccodingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
+timestamp,balancerId,clientIpAccordingCloudflare,clientCountryAccordingCloudflare,balancerColocationCenter,targetDomain,scheme,httpVersion,tlsVersion,clientCountry,clientCity,clientAsn,clientNetwork,latencyTotal,latencyDNS,latencyTCP,latencyTLS,latencyFirstByte,latencyDownload
 1766947202.351,174f22,196.49.19.40,BF,LOS,cloudflare.com,https,http/2,TLSv1.3,BF,Ouagadougou,328010,Burkina Faso Internet EXchange Point (BFIX),80,null,null,null,41,3
 1766947203.716,174f29,196.49.19.40,BF,LOS,cloudflare.com,https,http/2,TLSv1.3,BF,Ouagadougou,328010,Burkina Faso Internet EXchange Point (BFIX),211,null,null,null,46,2
 1766947204.22,174f27,196.49.19.40,BF,LOS,cloudflare.com,https,http/2,TLSv1.3,BF,Ouagadougou,328010,Burkina Faso Internet EXchange Point (BFIX),154,null,null,null,37,1
