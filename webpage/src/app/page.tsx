@@ -4,15 +4,14 @@ import LoadBalancerTable from "@/components/LoadBalancerTable";
 import RunTest from "@/components/RunTest";
 
 export default function Home() {
-  const handleDownloadCSV = () => {
-    const url = "/full_combined_fixed.csv";
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "full_combined_fixed.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleDownloadCSV = async () => {
+    const response = await fetch("/api/download-csv");
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    }
+   };
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black p-8">
