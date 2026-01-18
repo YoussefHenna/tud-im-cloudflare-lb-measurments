@@ -1,3 +1,4 @@
 dist/
 node_modules/
 collector/results/*.csv
+.venv

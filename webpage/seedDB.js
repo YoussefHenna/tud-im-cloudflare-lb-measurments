@@ -11,7 +11,7 @@ const CHUNK_SIZE = 50000;
 
 const seedDB = async () => {
   const csvContents = await fs.readFile(
-    "../data/full_combined_fixed.csv",
+    "../data/full_dataset_combined.csv",
     "utf8"
   );
 
@@ -26,15 +26,15 @@ const seedDB = async () => {
       ({
         timestamp,
         balancerId,
-        balancerIp,
-        balancerCountry,
+        clientIpAccordingCloudflare,
+        clientCountryAccordingCloudflare,
         balancerColocationCenter,
       }) => {
         dataToAdd.push({
           id: balancerId,
           lastChecked: new Date(Number(timestamp) * 1000),
-          ipAddress: balancerIp,
-          country: balancerCountry,
+          ipAddress: clientIpAccordingCloudflare,
+          country: clientCountryAccordingCloudflare,
           colocationCenter: balancerColocationCenter,
         });
       }
@@ -55,8 +55,7 @@ const seedDB = async () => {
         const chunkIndex = i / CHUNK_SIZE + 1;
 
         console.log(
-          `Inserting chunk ${chunkIndex}/${totalChunks} (records ${
-            i + 1
+          `Inserting chunk ${chunkIndex}/${totalChunks} (records ${i + 1
           } to ${Math.min(i + CHUNK_SIZE, total)})`
         );
 

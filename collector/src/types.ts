@@ -3,7 +3,8 @@ export interface CollectorResult {
 
   balancerId: string | null;
   balancerIp: string | null;
-  balancerCountry: string | null;
+  clientIpAccordingCloudflare: string | null;
+  clientCountryAccordingCloudflare: string | null;
   balancerColocationCenter: string | null;
 
   targetDomain: string | null;
