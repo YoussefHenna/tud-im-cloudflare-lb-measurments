@@ -16,7 +16,7 @@ export default function RunTest() {
   const [host, setHost] = useState<string>(hostOptions[0].value);
   const [numRuns, setNumRuns] = useState<number>(1);
   const [currentTestResults, setCurrentTestResults] = useState<LoadBalancer[]>(
-    []
+    [],
   );
   const [isRunningTest, setIsRunningTest] = useState<boolean>(false);
   const [runWaitTime, setRunWaitTime] = useState<number>(60);
@@ -35,7 +35,7 @@ export default function RunTest() {
       for (let i = 0; i < numRuns; i++) {
         if (!isFirstRun) {
           await new Promise((resolve) =>
-            setTimeout(resolve, runWaitTime * 1000)
+            setTimeout(resolve, runWaitTime * 1000),
           );
         }
         isFirstRun = false;

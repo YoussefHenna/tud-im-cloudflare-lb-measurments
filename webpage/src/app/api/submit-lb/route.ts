@@ -7,7 +7,7 @@ const bodySchema = zod.array(
     ipAddress: zod.string(),
     country: zod.string(),
     colocationCenter: zod.string(),
-  })
+  }),
 );
 
 export async function POST(request: Request) {
