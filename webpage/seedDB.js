@@ -11,7 +11,7 @@ const CHUNK_SIZE = 50000;
 
 const seedDB = async () => {
   const csvContents = await fs.readFile(
-    "../data/full_combined_fixed.csv",
+    "../data/full_dataset_combined.csv",
     "utf8"
   );
 
