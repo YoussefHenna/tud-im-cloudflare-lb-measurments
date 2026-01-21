@@ -174,6 +174,37 @@ async function collectFromLocation(
   }
 }
 
+async function runWorker(
+  apiKey: string,
+  locations: string[],
+  hosts: string[],
+  totalRequests: number,
+  outputFile: string,
+) {
+  const globalping = new Globalping({
+    auth: apiKey,
+  });
+
+  for (const host of hosts) {
+    for (const location of locations) {
+      try {
+        await collectFromLocation(
+          globalping,
+          host,
+          location,
+          totalRequests,
+          outputFile,
+        );
+      } catch (e) {
+        console.error(
+          `[${apiKey.slice(0, 5)}...] Failed to collect from location ${location} for host ${host}:`,
+          e,
+        );
+      }
+    }
+  }
+}
+
 async function run() {
   const args = getArgs();
 
@@ -192,10 +223,6 @@ async function run() {
     process.exit(1);
   }
 
-  const globalping = new Globalping({
-    auth: args.globalPingApiKeys[0],
-  });
-
   const runs = args.numberOfRuns || 1;
   const outputFile = getResultFilePath();
   console.log(`Saving results to: ${outputFile}`);
@@ -203,19 +230,31 @@ async function run() {
   // Initialize file with header
   saveResultsToCsv([], outputFile, false);
 
-  for (const host of args.hosts) {
-    // Iterate over all provided locations separately
-    for (const location of args.locations) {
-      try {
-        await collectFromLocation(globalping, host, location, runs, outputFile);
-      } catch (e) {
-        console.error(
-          `Failed to collect from location ${location} for host ${host}:`,
-          e,
-        );
-      }
+  const apiKeys = args.globalPingApiKeys;
+  const locations = args.locations;
+
+  // Split locations among API keys
+  const chunks: string[][] = Array.from({ length: apiKeys.length }, () => []);
+  locations.forEach((loc, index) => {
+    chunks[index % apiKeys.length].push(loc);
+  });
+
+  console.log(
+    `Distributing ${locations.length} locations among ${apiKeys.length} clients`,
+  );
+
+  const promises = apiKeys.map((key, index) => {
+    const workerLocations = chunks[index];
+    if (workerLocations.length === 0) {
+      return Promise.resolve();
     }
-  }
+    console.log(
+      `Client ${index + 1} (${key.slice(0, 5)}...) assigned ${workerLocations.length} locations`,
+    );
+    return runWorker(key, workerLocations, args.hosts!, runs, outputFile);
+  });
+
+  await Promise.all(promises);
 
   console.log("All measurements completed");
 }
