@@ -11,7 +11,7 @@ import {
 } from "./utils";
 
 const MIN_REQUESTS_THRESHOLD = 300;
-const BACK_OFF_EVERY_N_REQUESTS = 5_000; // 5 seconds
+const BACK_OFF_EVERY_N_REQUESTS = 5_000;
 const BACK_OFF_TIME = 60_000; // 1 minute
 const MAX_CONSECUTIVE_FAILURES = 5;
 
