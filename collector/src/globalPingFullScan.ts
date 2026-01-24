@@ -175,9 +175,6 @@ async function collectForHost(
     while (localRemaining > 0 && currentProbeIndex < availableProbes.length) {
       try {
         const currentProbe = availableProbes[currentProbeIndex];
-        console.log(
-          `Creating measurement for ${currentProbe.location.city} - ${currentProbe.location.asn}...`,
-        );
 
         const results = await createMeasurement(
           globalping,
