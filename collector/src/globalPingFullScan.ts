@@ -149,6 +149,7 @@ async function collectForHost(
     `Starting collection for ${host} (Target: ${availableProbes.length} probes)`,
   );
 
+  let currentRequestsDone = 0;
   let totalRequestsDone = 0;
   let consecutiveFailures = 0;
   let currentProbeIndex = 0;
@@ -157,6 +158,7 @@ async function collectForHost(
   let outputFile = prepareOutputFile();
 
   const moveToNextProbe = () => {
+    currentRequestsDone = 0;
     currentProbeIndex++;
     consecutiveFailures = 0;
     seenColocations = new Set<string>;
@@ -177,6 +179,7 @@ async function collectForHost(
           outputFile,
         );
 
+        currentRequestsDone++;
         totalRequestsDone++;
         localRemaining--;
 
@@ -204,7 +207,7 @@ async function collectForHost(
         seenColocations.add(result.balancerColocationCenter!);
         const { shouldContinue } = addResultToSeenIds(seenColocations, result);
 
-        if (!shouldContinue) {
+        if (currentRequestsDone > MIN_REQUESTS_THRESHOLD && !shouldContinue) {
           console.log(
             `No new IDs found after, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
           );
