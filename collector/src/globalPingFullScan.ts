@@ -11,9 +11,11 @@ import {
 } from "./utils";
 import fs from "fs/promises";
 
-const MIN_REQUESTS_THRESHOLD = 300;
-const BACK_OFF_EVERY_N_REQUESTS = 5_000;
-const BACK_OFF_TIME = 60_000; // 1 minute
+const PARALLEL_REQUESTS = 10;
+
+const MIN_REQUESTS_THRESHOLD_PER_COL = 300;
+const MIN_REQUESTS_THRESHOLD_PER_PROBE = 20;
+
 const MAX_CONSECUTIVE_FAILURES = 5;
 
 class ColocationStats {
@@ -23,7 +25,7 @@ class ColocationStats {
   // Colocation is covered if we made enough requests after last found balancer ID:
   // Both with minimal threshold and curent dynamic threshold (count of already found balancers).
   isCovered(): boolean {
-    return this.requestsSinceLastNew > Math.max(MIN_REQUESTS_THRESHOLD, this.uniqueBalancers.size);
+    return this.requestsSinceLastNew > Math.max(MIN_REQUESTS_THRESHOLD_PER_COL, 2 * this.uniqueBalancers.size);
   }
 };
 
@@ -33,97 +35,77 @@ async function createMeasurement(
   globalping: Globalping<false>,
   host: string,
   location: ProbeLocation,
-  outputFile: string,
 ): Promise<CollectorResult[] | null> {
-  const measurement = await globalping.createMeasurement({
-    type: "http",
-    target: host,
-    measurementOptions: {
-      request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
-      protocol: PROTOCOL,
-    },
-    locations: [
-      {
-        country: location.country,
-        city: location.city,
-        network: location.network,
-        limit: 1,
+  try {
+    const measurement = await globalping.createMeasurement({
+      type: "http",
+      target: host,
+      measurementOptions: {
+        request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
+        protocol: PROTOCOL,
       },
-    ],
-  });
+      locations: [
+        {
+          country: location.country,
+          city: location.city,
+          network: location.network,
+          limit: 1,
+        },
+      ],
+    });
 
-  if (!measurement.ok) {
-    if (measurement.data.error.type === "rate_limit_exceeded") {
-      console.log("Rate limit exceeded creating measurement....");
+    if (!measurement.ok) {
+      if (measurement.data.error.type === "rate_limit_exceeded") {
+        console.log("Rate limit exceeded creating measurement....");
+        return null;
+      }
+      console.error(
+        `Failed to create measurement: ${measurement.data.error.message}`,
+      );
       return null;
     }
-    console.error(
-      `Failed to create measurement: ${measurement.data.error.message}`,
-    );
+
+    const rootID = measurement.data.id;
+
+    // Process root measurement result
+    const results = await processMeasurementResults(globalping, rootID);
+
+    return results;
+  } catch (e) {
+    console.error(`Unexpected error in createMeasurement:`, e);
     return null;
   }
-
-  const rootID = measurement.data.id;
-
-  // Process root measurement result
-  const results = await processMeasurementResults(globalping, rootID);
-  saveResultsToCsv(results, outputFile, true);
-
-  return results;
 }
 
-async function getAndWaitForLimits(
-  globalping: Globalping<false>,
-): Promise<number> {
-  while (true) {
-    const limits = await globalping.getLimits();
-    if (!limits.ok) {
-      console.warn("Failed to get limits, waiting 5s...");
-      await sleep(5000);
-      continue;
-    }
-
-    const createLimit = limits.data.rateLimit.measurements.create;
-    let localRemaining = createLimit.remaining;
-
-    if (localRemaining <= 0) {
-      const wait = createLimit.reset + 1;
-      console.log(`Rate limit reached. Waiting ${wait}s...`);
-      await sleep(wait * 1000);
-      continue;
-    }
-
-    return localRemaining;
-  }
-}
-
-function addResultToSeenIds(seenColocationsByVP: Set<string>, result: CollectorResult): {
+function addResultsToSeenIds(seenColocationsByVP: Set<string>, results: CollectorResult[]): {
   shouldContinue: boolean;
 } {
-  const balancerId = result.balancerId!;
-  const colocation = result.balancerColocationCenter!;
-
-  // Init value for colocation stats
-  if (!colocationsStats.has(colocation)) {
-    colocationsStats.set(colocation, new ColocationStats);
-  }
-
-  // Update value for colocation stats
-  let stats = colocationsStats.get(colocation)!
-  if (stats.uniqueBalancers.has(balancerId)) {
-    stats.requestsSinceLastNew++;
-  } else {
-    stats.uniqueBalancers.add(balancerId);
-    stats.requestsSinceLastNew = 0;
-  }
-
   let shouldContinue = false;
-  // Iterate over all colocations seen by current vantage point
-  // And if ALL of them are covered, stop measurement.
-  for (const seenColocation in seenColocationsByVP.entries) {
-    const seenStats = colocationsStats.get(seenColocation)!;
-    if (!seenStats.isCovered()) {
-      shouldContinue = true;
+  for (const result of results) {
+    const balancerId = result.balancerId!;
+    const colocation = result.balancerColocationCenter!;
+
+    // Init value for colocation stats
+    if (!colocationsStats.has(colocation)) {
+      colocationsStats.set(colocation, new ColocationStats);
+    }
+
+    // Update value for colocation stats
+    let stats = colocationsStats.get(colocation)!
+    if (stats.uniqueBalancers.has(balancerId)) {
+      stats.requestsSinceLastNew++;
+    } else {
+      stats.uniqueBalancers.add(balancerId);
+      stats.requestsSinceLastNew = 0;
+    }
+
+    // Iterate over all colocations seen by current vantage point
+    // And if ALL of them are covered, stop measurement.
+    for (const seenColocation of Array.from(seenColocationsByVP.keys())) {
+      const seenStats = colocationsStats.get(seenColocation)!;
+      if (!seenStats.isCovered()) {
+        shouldContinue = true;
+      }
     }
   }
 
@@ -169,59 +151,63 @@ async function collectForHost(
   };
 
   while (currentProbeIndex < availableProbes.length) {
-    let localRemaining = await getAndWaitForLimits(globalping);
+    try {
+      const currentProbe = availableProbes[currentProbeIndex];
+      const batchSize = PARALLEL_REQUESTS;
 
-    // Inner loop to consume available limits
-    while (localRemaining > 0 && currentProbeIndex < availableProbes.length) {
-      try {
-        const currentProbe = availableProbes[currentProbeIndex];
-
-        const results = await createMeasurement(
+      let promises: Promise<CollectorResult[] | null>[] = [];
+      for (let i = 0; i < batchSize; i++) {
+        promises.push(createMeasurement(
           globalping,
           host,
           currentProbe.location,
-          outputFile,
-        );
+        ));
+      }
 
-        currentRequestsDone++;
-        totalRequestsDone++;
-        localRemaining--;
+      const results = await Promise.all(promises);
+      const validResults = results.filter((result): result is CollectorResult[] => result !== null).flat();
 
-        if (totalRequestsDone % BACK_OFF_EVERY_N_REQUESTS === 0) {
-          console.log(`Backing off after ${totalRequestsDone} requests...`);
-          await sleep(BACK_OFF_TIME);
-        }
+      saveResultsToCsv(validResults, outputFile, true);
 
-        if (!results) {
-          consecutiveFailures++;
+      const requestsLaunched = results.length;
+      currentRequestsDone += requestsLaunched;
+      totalRequestsDone += requestsLaunched;
 
-          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            console.log(
-              `Max consecutive failures for probe reached, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
-            );
-            moveToNextProbe();
-            continue;
-          }
+      if (validResults.length === 0) {
+        consecutiveFailures++;
 
-          console.log("Failed to create measurement, waiting 5s...");
-          await sleep(5000);
-          continue;
-        }
-        const result = results[0]!;
-        seenColocations.add(result.balancerColocationCenter!);
-        const { shouldContinue } = addResultToSeenIds(seenColocations, result);
-
-        if (currentRequestsDone > MIN_REQUESTS_THRESHOLD && !shouldContinue) {
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
           console.log(
-            `No new IDs found after, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
+            `Max consecutive failures for probe reached, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
           );
           moveToNextProbe();
+          continue;
         }
-      } catch (e) {
-        console.error("Error in batch loop:", e);
-        await sleep(1000);
-        localRemaining--;
+
+        console.log("Failed to create any measurements in batch, waiting 10s...");
+        await sleep(10000);
+        continue;
       }
+
+      // Reset consecutive failures if we had at least one success
+      consecutiveFailures = 0;
+
+      // We need to check coverage after ALL results in this batch
+      for (const result of validResults) {
+        seenColocations.add(result.balancerColocationCenter!);
+      }
+      const { shouldContinue } = addResultsToSeenIds(seenColocations, validResults);
+
+      if (currentRequestsDone > MIN_REQUESTS_THRESHOLD_PER_PROBE && !shouldContinue) {
+        console.log(
+          `Coverage reached for all seen colocations, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
+        );
+        moveToNextProbe();
+        continue;
+      }
+    } catch (e) {
+      console.error("Error in batch loop:", e);
+      await sleep(5000);
     }
   }
 }
