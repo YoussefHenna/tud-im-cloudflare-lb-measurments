@@ -2,8 +2,6 @@ import { CollectorResult } from "./types";
 import { Globalping, Probe, ProbeLocation } from "globalping";
 import {
   getArgs,
-  getTraceUrl,
-  parseTraceResult,
   getResultFilePath,
   saveResultsToCsv,
   sleep,
@@ -12,11 +10,23 @@ import {
   PROTOCOL,
 } from "./utils";
 
-const REQUESTS_WITHOUT_NEW_THRESHOLD = 500;
-const BACK_OFF_EVERY_N_REQUESTS = 5_000;
-const BACK_OFF_TIME = 60_000 * 20; // 20 minutes
+const MIN_REQUESTS_THRESHOLD = 300;
+const BACK_OFF_EVERY_N_REQUESTS = 5_000; // 5 seconds
+const BACK_OFF_TIME = 60_000; // 1 minute
 const MAX_CONSECUTIVE_FAILURES = 5;
-const seenIds = new Set<string>();
+
+class ColocationStats {
+  uniqueBalancers: Set<string> = new Set();
+  requestsSinceLastNew: number = 0;
+
+  // Colocation is covered if we made enough requests after last found balancer ID:
+  // Both with minimal threshold and curent dynamic threshold (count of already found balancers).
+  isCovered(): boolean {
+    return this.requestsSinceLastNew > Math.max(MIN_REQUESTS_THRESHOLD, this.uniqueBalancers.size);
+  }
+};
+
+const colocationsStats = new Map<string, ColocationStats>();
 
 async function createMeasurement(
   globalping: Globalping<false>,
@@ -37,6 +47,7 @@ async function createMeasurement(
     },
     locations: [
       {
+        country: location.country,
         city: location.city,
         network: location.network,
         limit: 1,
@@ -89,17 +100,37 @@ async function getAndWaitForLimits(
   }
 }
 
-function addResultsToSeenIds(results: CollectorResult[]): {
-  hasNewId: boolean;
+function addResultToSeenIds(seenColocationsByVP: Set<string>, result: CollectorResult): {
+  shouldContinue: boolean;
 } {
-  let hasNewId = false;
-  for (const result of results) {
-    if (result.balancerId && !seenIds.has(result.balancerId)) {
-      seenIds.add(result.balancerId);
-      hasNewId = true;
+  const balancerId = result.balancerId!;
+  const colocation = result.balancerColocationCenter!;
+
+  // Init value for colocation stats
+  if (!colocationsStats.has(colocation)) {
+    colocationsStats.set(colocation, new ColocationStats);
+  }
+
+  // Update value for colocation stats
+  let stats = colocationsStats.get(colocation)!
+  if (stats.uniqueBalancers.has(balancerId)) {
+    stats.requestsSinceLastNew++;
+  } else {
+    stats.uniqueBalancers.add(balancerId);
+    stats.requestsSinceLastNew = 0;
+  }
+
+  let shouldContinue = false;
+  // Iterate over all colocations seen by current vantage point
+  // And if ALL of them are covered, stop measurement.
+  for (const seenColocation in seenColocationsByVP.entries) {
+    const seenStats = colocationsStats.get(seenColocation)!;
+    if (!seenStats.isCovered()) {
+      shouldContinue = true;
     }
   }
-  return { hasNewId };
+
+  return { shouldContinue };
 }
 
 function prepareOutputFile(): string {
@@ -118,18 +149,17 @@ async function collectForHost(
     `Starting collection for ${host} (Target: ${availableProbes.length} probes)`,
   );
 
-  let requestsDoneWithoutNewId = 0;
   let totalRequestsDone = 0;
   let consecutiveFailures = 0;
   let currentProbeIndex = 0;
+  let seenColocations = new Set<string>;
 
   let outputFile = prepareOutputFile();
 
   const moveToNextProbe = () => {
-    outputFile = prepareOutputFile();
     currentProbeIndex++;
-    requestsDoneWithoutNewId = 0;
     consecutiveFailures = 0;
+    seenColocations = new Set<string>;
   };
 
   while (currentProbeIndex < availableProbes.length) {
@@ -170,17 +200,13 @@ async function collectForHost(
           await sleep(5000);
           continue;
         }
-        const { hasNewId } = addResultsToSeenIds(results);
+        const result = results[0]!;
+        seenColocations.add(result.balancerColocationCenter!);
+        const { shouldContinue } = addResultToSeenIds(seenColocations, result);
 
-        if (hasNewId) {
-          requestsDoneWithoutNewId = 0;
-        } else {
-          requestsDoneWithoutNewId += 1;
-        }
-
-        if (requestsDoneWithoutNewId >= REQUESTS_WITHOUT_NEW_THRESHOLD) {
+        if (!shouldContinue) {
           console.log(
-            `No new IDs found after ${REQUESTS_WITHOUT_NEW_THRESHOLD} requests, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
+            `No new IDs found after, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
           );
           moveToNextProbe();
         }
