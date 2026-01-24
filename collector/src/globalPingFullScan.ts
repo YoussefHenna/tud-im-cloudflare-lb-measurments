@@ -36,40 +36,45 @@ async function createMeasurement(
   host: string,
   location: ProbeLocation,
 ): Promise<CollectorResult[] | null> {
-  const measurement = await globalping.createMeasurement({
-    type: "http",
-    target: host,
-    measurementOptions: {
-      request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
-      protocol: PROTOCOL,
-    },
-    locations: [
-      {
-        country: location.country,
-        city: location.city,
-        network: location.network,
-        limit: 1,
+  try {
+    const measurement = await globalping.createMeasurement({
+      type: "http",
+      target: host,
+      measurementOptions: {
+        request: { path: CLOUDFLARE_LB_PATH, method: "GET" },
+        protocol: PROTOCOL,
       },
-    ],
-  });
+      locations: [
+        {
+          country: location.country,
+          city: location.city,
+          network: location.network,
+          limit: 1,
+        },
+      ],
+    });
 
-  if (!measurement.ok) {
-    if (measurement.data.error.type === "rate_limit_exceeded") {
-      console.log("Rate limit exceeded creating measurement....");
+    if (!measurement.ok) {
+      if (measurement.data.error.type === "rate_limit_exceeded") {
+        console.log("Rate limit exceeded creating measurement....");
+        return null;
+      }
+      console.error(
+        `Failed to create measurement: ${measurement.data.error.message}`,
+      );
       return null;
     }
-    console.error(
-      `Failed to create measurement: ${measurement.data.error.message}`,
-    );
+
+    const rootID = measurement.data.id;
+
+    // Process root measurement result
+    const results = await processMeasurementResults(globalping, rootID);
+
+    return results;
+  } catch (e) {
+    console.error(`Unexpected error in createMeasurement:`, e);
     return null;
   }
-
-  const rootID = measurement.data.id;
-
-  // Process root measurement result
-  const results = await processMeasurementResults(globalping, rootID);
-
-  return results;
 }
 
 function addResultsToSeenIds(seenColocationsByVP: Set<string>, results: CollectorResult[]): {
@@ -193,11 +198,12 @@ async function collectForHost(
       }
       const { shouldContinue } = addResultsToSeenIds(seenColocations, validResults);
 
-      if (currentRequestsDone > MIN_REQUESTS_THRESHOLD_PER_PROBE && shouldContinue) {
+      if (currentRequestsDone > MIN_REQUESTS_THRESHOLD_PER_PROBE && !shouldContinue) {
         console.log(
           `Coverage reached for all seen colocations, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
         );
         moveToNextProbe();
+        continue;
       }
     } catch (e) {
       console.error("Error in batch loop:", e);
