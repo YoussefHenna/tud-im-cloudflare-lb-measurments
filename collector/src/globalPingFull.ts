@@ -15,6 +15,7 @@ import {
 const REQUESTS_WITHOUT_NEW_THRESHOLD = 500;
 const BACK_OFF_EVERY_N_REQUESTS = 5_000;
 const BACK_OFF_TIME = 60_000 * 20; // 20 minutes
+const MAX_CONSECUTIVE_FAILURES = 5;
 const seenIds = new Set<string>();
 
 async function createMeasurement(
@@ -119,9 +120,17 @@ async function collectForHost(
 
   let requestsDoneWithoutNewId = 0;
   let totalRequestsDone = 0;
+  let consecutiveFailures = 0;
   let currentProbeIndex = 0;
 
   let outputFile = prepareOutputFile();
+
+  const moveToNextProbe = () => {
+    outputFile = prepareOutputFile();
+    currentProbeIndex++;
+    requestsDoneWithoutNewId = 0;
+    consecutiveFailures = 0;
+  };
 
   while (currentProbeIndex < availableProbes.length) {
     let localRemaining = await getAndWaitForLimits(globalping);
@@ -137,9 +146,26 @@ async function collectForHost(
           currentProbe.location,
           outputFile,
         );
+
         totalRequestsDone++;
+        localRemaining--;
+
+        if (totalRequestsDone % BACK_OFF_EVERY_N_REQUESTS === 0) {
+          console.log(`Backing off after ${totalRequestsDone} requests...`);
+          await sleep(BACK_OFF_TIME);
+        }
 
         if (!results) {
+          consecutiveFailures++;
+
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            console.log(
+              `Max consecutive failures for probe reached, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
+            );
+            moveToNextProbe();
+            continue;
+          }
+
           console.log("Failed to create measurement, waiting 5s...");
           await sleep(5000);
           continue;
@@ -156,16 +182,7 @@ async function collectForHost(
           console.log(
             `No new IDs found after ${REQUESTS_WITHOUT_NEW_THRESHOLD} requests, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
           );
-          outputFile = prepareOutputFile();
-          currentProbeIndex++;
-          requestsDoneWithoutNewId = 0;
-        }
-
-        localRemaining--;
-
-        if (totalRequestsDone % BACK_OFF_EVERY_N_REQUESTS === 0) {
-          console.log(`Backing off after ${totalRequestsDone} requests...`);
-          await sleep(BACK_OFF_TIME);
+          moveToNextProbe();
         }
       } catch (e) {
         console.error("Error in batch loop:", e);
