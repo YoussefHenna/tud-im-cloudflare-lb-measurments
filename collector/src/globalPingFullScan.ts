@@ -9,6 +9,7 @@ import {
   CLOUDFLARE_LB_PATH,
   PROTOCOL,
 } from "./utils";
+import fs from "fs/promises";
 
 const MIN_REQUESTS_THRESHOLD = 300;
 const BACK_OFF_EVERY_N_REQUESTS = 5_000;
@@ -34,10 +35,6 @@ async function createMeasurement(
   location: ProbeLocation,
   outputFile: string,
 ): Promise<CollectorResult[] | null> {
-  console.log(
-    `Creating measurement for ${location.city} - ${location.network}...`,
-  );
-
   const measurement = await globalping.createMeasurement({
     type: "http",
     target: host,
@@ -156,12 +153,19 @@ async function collectForHost(
   let seenColocations = new Set<string>;
 
   let outputFile = prepareOutputFile();
+  let progressFile = "full_scan_progress.txt"
 
   const moveToNextProbe = () => {
     currentRequestsDone = 0;
     currentProbeIndex++;
     consecutiveFailures = 0;
     seenColocations = new Set<string>;
+
+    try {
+      fs.writeFile(progressFile, `${currentProbeIndex}/${availableProbes.length}`, 'utf8');
+    } catch (err) {
+      console.error('Failed to update progress file:', err);
+    }
   };
 
   while (currentProbeIndex < availableProbes.length) {
@@ -171,6 +175,9 @@ async function collectForHost(
     while (localRemaining > 0 && currentProbeIndex < availableProbes.length) {
       try {
         const currentProbe = availableProbes[currentProbeIndex];
+        console.log(
+          `Creating measurement for ${currentProbe.location.city} - ${currentProbe.location.asn}...`,
+        );
 
         const results = await createMeasurement(
           globalping,
