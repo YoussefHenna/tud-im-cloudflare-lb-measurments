@@ -235,8 +235,32 @@ async function run() {
     process.exit(1);
   }
 
+  let probesToProcess = availableProbes.data;
+
+  if (args.skipLocationsFile) {
+    try {
+      const skipData = await fs.readFile(args.skipLocationsFile, 'utf8');
+      const skipSet = new Set(
+        skipData
+          .split('\n')
+          .map(line => line.trim())
+      );
+
+      const initialCount = probesToProcess.length;
+      probesToProcess = probesToProcess.filter(probe => {
+        const key = `${probe.location.country},${probe.location.city},${probe.location.asn}`;
+        return !skipSet.has(key);
+      });
+
+      console.log(`Skipped ${initialCount - probesToProcess.length} probes based on ${args.skipLocationsFile}.`);
+    } catch (err) {
+      console.error(`Could not read skip file ${args.skipLocationsFile}:`, err);
+      return;
+    }
+  }
+
   for (const host of args.hosts) {
-    await collectForHost(globalping, host, availableProbes.data);
+    await collectForHost(globalping, host, probesToProcess);
   }
 
   console.log("All measurements completed");

@@ -128,6 +128,7 @@ export function getArgs(): Args {
     useHttp3: args.http3,
     globalPingApiKeys: args.keys?.split(","),
     locations: args.locations?.split(","),
+    skipLocationsFile: args.skipLocationsFile,
   };
 }
 
