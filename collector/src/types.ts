@@ -31,4 +31,5 @@ export interface Args {
   useHttp3?: boolean;
   globalPingApiKeys?: string[];
   locations?: string[];
+  skipLocationsFile?: string;
 }
