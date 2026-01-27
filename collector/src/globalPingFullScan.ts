@@ -8,8 +8,10 @@ import {
   processMeasurementResults,
   CLOUDFLARE_LB_PATH,
   PROTOCOL,
+  RESULT_DIR,
 } from "./utils";
 import fs from "fs/promises";
+import path from "path";
 
 const PARALLEL_REQUESTS = 10;
 
@@ -25,9 +27,12 @@ class ColocationStats {
   // Colocation is covered if we made enough requests after last found balancer ID:
   // Both with minimal threshold and curent dynamic threshold (count of already found balancers).
   isCovered(): boolean {
-    return this.requestsSinceLastNew > Math.max(MIN_REQUESTS_THRESHOLD_PER_COL, 2 * this.uniqueBalancers.size);
+    return (
+      this.requestsSinceLastNew >
+      Math.max(MIN_REQUESTS_THRESHOLD_PER_COL, 2 * this.uniqueBalancers.size)
+    );
   }
-};
+}
 
 const colocationsStats = new Map<string, ColocationStats>();
 
@@ -77,7 +82,10 @@ async function createMeasurement(
   }
 }
 
-function addResultsToSeenIds(seenColocationsByVP: Set<string>, results: CollectorResult[]): {
+function addResultsToSeenIds(
+  seenColocationsByVP: Set<string>,
+  results: CollectorResult[],
+): {
   shouldContinue: boolean;
 } {
   let shouldContinue = false;
@@ -87,11 +95,11 @@ function addResultsToSeenIds(seenColocationsByVP: Set<string>, results: Collecto
 
     // Init value for colocation stats
     if (!colocationsStats.has(colocation)) {
-      colocationsStats.set(colocation, new ColocationStats);
+      colocationsStats.set(colocation, new ColocationStats());
     }
 
     // Update value for colocation stats
-    let stats = colocationsStats.get(colocation)!
+    let stats = colocationsStats.get(colocation)!;
     if (stats.uniqueBalancers.has(balancerId)) {
       stats.requestsSinceLastNew++;
     } else {
@@ -110,6 +118,43 @@ function addResultsToSeenIds(seenColocationsByVP: Set<string>, results: Collecto
   }
 
   return { shouldContinue };
+}
+
+async function prefillColocationsStatsFromExistingResults(): Promise<void> {
+  const existingResults = await fs.readdir(RESULT_DIR);
+  for (const result of existingResults) {
+    const resultPath = path.join(RESULT_DIR, result);
+    const resultContent = await fs.readFile(resultPath, "utf8");
+
+    const resultsLines = resultContent
+      .split("\n")
+      .map((line) => line.split(","));
+    for (const resultLine of resultsLines) {
+      const balancerId = resultLine.length > 1 ? resultLine[1] : null;
+      const colocation = resultLine.length > 5 ? resultLine[5] : null;
+      if (balancerId === "balancerId") {
+        // skip header
+        continue;
+      }
+
+      if (colocation && balancerId) {
+        addResultsToSeenIds(new Set<string>(), [
+          {
+            balancerId,
+            balancerColocationCenter: colocation,
+          } as CollectorResult,
+        ]);
+      }
+    }
+  }
+
+  console.log("Prefilled colocations stats:");
+  for (const colocation of Array.from(colocationsStats.keys())) {
+    const currentStats = colocationsStats.get(colocation)!;
+    console.log(
+      `Colocation: ${colocation}, Balancers: ${currentStats.uniqueBalancers.size}`,
+    );
+  }
 }
 
 function prepareOutputFile(): string {
@@ -132,21 +177,25 @@ async function collectForHost(
   let totalRequestsDone = 0;
   let consecutiveFailures = 0;
   let currentProbeIndex = 0;
-  let seenColocations = new Set<string>;
+  let seenColocations = new Set<string>();
 
   let outputFile = prepareOutputFile();
-  let progressFile = "full_scan_progress.txt"
+  let progressFile = "full_scan_progress.txt";
 
   const moveToNextProbe = () => {
     currentRequestsDone = 0;
     currentProbeIndex++;
     consecutiveFailures = 0;
-    seenColocations = new Set<string>;
+    seenColocations = new Set<string>();
 
     try {
-      fs.writeFile(progressFile, `${currentProbeIndex}/${availableProbes.length}`, 'utf8');
+      fs.writeFile(
+        progressFile,
+        `${currentProbeIndex}/${availableProbes.length}`,
+        "utf8",
+      );
     } catch (err) {
-      console.error('Failed to update progress file:', err);
+      console.error("Failed to update progress file:", err);
     }
   };
 
@@ -157,15 +206,15 @@ async function collectForHost(
 
       let promises: Promise<CollectorResult[] | null>[] = [];
       for (let i = 0; i < batchSize; i++) {
-        promises.push(createMeasurement(
-          globalping,
-          host,
-          currentProbe.location,
-        ));
+        promises.push(
+          createMeasurement(globalping, host, currentProbe.location),
+        );
       }
 
       const results = await Promise.all(promises);
-      const validResults = results.filter((result): result is CollectorResult[] => result !== null).flat();
+      const validResults = results
+        .filter((result): result is CollectorResult[] => result !== null)
+        .flat();
 
       saveResultsToCsv(validResults, outputFile, true);
 
@@ -184,7 +233,9 @@ async function collectForHost(
           continue;
         }
 
-        console.log("Failed to create any measurements in batch, waiting 10s...");
+        console.log(
+          "Failed to create any measurements in batch, waiting 10s...",
+        );
         await sleep(10000);
         continue;
       }
@@ -196,9 +247,15 @@ async function collectForHost(
       for (const result of validResults) {
         seenColocations.add(result.balancerColocationCenter!);
       }
-      const { shouldContinue } = addResultsToSeenIds(seenColocations, validResults);
+      const { shouldContinue } = addResultsToSeenIds(
+        seenColocations,
+        validResults,
+      );
 
-      if (currentRequestsDone > MIN_REQUESTS_THRESHOLD_PER_PROBE && !shouldContinue) {
+      if (
+        currentRequestsDone > MIN_REQUESTS_THRESHOLD_PER_PROBE &&
+        !shouldContinue
+      ) {
         console.log(
           `Coverage reached for all seen colocations, moving to next probe ${currentProbeIndex + 1} of ${availableProbes.length}`,
         );
@@ -237,22 +294,22 @@ async function run() {
 
   let probesToProcess = availableProbes.data;
 
+  await prefillColocationsStatsFromExistingResults();
+
   if (args.skipLocationsFile) {
     try {
-      const skipData = await fs.readFile(args.skipLocationsFile, 'utf8');
-      const skipSet = new Set(
-        skipData
-          .split('\n')
-          .map(line => line.trim())
-      );
+      const skipData = await fs.readFile(args.skipLocationsFile, "utf8");
+      const skipSet = new Set(skipData.split("\n").map((line) => line.trim()));
 
       const initialCount = probesToProcess.length;
-      probesToProcess = probesToProcess.filter(probe => {
+      probesToProcess = probesToProcess.filter((probe) => {
         const key = `${probe.location.country},${probe.location.city},${probe.location.asn}`;
         return !skipSet.has(key);
       });
 
-      console.log(`Skipped ${initialCount - probesToProcess.length} probes based on ${args.skipLocationsFile}.`);
+      console.log(
+        `Skipped ${initialCount - probesToProcess.length} probes based on ${args.skipLocationsFile}.`,
+      );
     } catch (err) {
       console.error(`Could not read skip file ${args.skipLocationsFile}:`, err);
       return;

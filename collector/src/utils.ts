@@ -62,9 +62,11 @@ export function saveToFile(results: CollectorResult[]): void {
   saveResultsToCsv(results, filePath);
 }
 
+export const RESULT_DIR = "results";
+
 export function getResultFilePath(): string {
   const timestamp = new Date().getTime();
-  const directory = "results";
+  const directory = RESULT_DIR;
   if (!fs.existsSync(directory)) {
     fs.mkdirSync(directory);
   }
