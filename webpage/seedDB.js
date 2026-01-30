@@ -10,10 +10,7 @@ const client = new PrismaClient({ adapter });
 const CHUNK_SIZE = 50000;
 
 const seedDB = async () => {
-  const csvContents = await fs.readFile(
-    "../data/full_dataset_combined.csv",
-    "utf8"
-  );
+  const csvContents = await fs.readFile("../data/full_scan.csv", "utf8");
 
   console.log("Parsing CSV...");
 
@@ -55,7 +52,8 @@ const seedDB = async () => {
         const chunkIndex = i / CHUNK_SIZE + 1;
 
         console.log(
-          `Inserting chunk ${chunkIndex}/${totalChunks} (records ${i + 1
+          `Inserting chunk ${chunkIndex}/${totalChunks} (records ${
+            i + 1
           } to ${Math.min(i + CHUNK_SIZE, total)})`
         );
 

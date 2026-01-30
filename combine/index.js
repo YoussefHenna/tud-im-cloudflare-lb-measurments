@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const DATA_DIR = path.join(__dirname, "..", "data","test1");
+const DATA_DIR = path.join(__dirname, "..", "data", "full_scan_raw");
 const OUTPUT_FILE = path.join(__dirname, "combined.csv");
 
 function main() {
@@ -85,10 +85,10 @@ function main() {
           // which is a city name has a comma in the name breaking the line
           // need to merge the previous column with the current column
           // Loop as it can contain multiple commas
-          while (isNaN(parseInt(cols[13]))) {
-            cols[12] = `"${cols[12].replaceAll('"', "")},${cols[13]}"`;
-            console.log(`Fixing city name to be: ${cols[12]}`);
-            cols.splice(13, 1);
+          while (isNaN(parseInt(cols[14]))) {
+            cols[13] = `"${cols[13].replaceAll('"', "")},${cols[14]}"`;
+            console.log(`Fixing city name to be: ${cols[13]}`);
+            cols.splice(14, 1);
 
             line = cols.join(",");
             colCount--;
