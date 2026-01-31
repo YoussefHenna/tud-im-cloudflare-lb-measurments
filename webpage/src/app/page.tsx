@@ -39,17 +39,45 @@ export default function Home() {
 
         <h1 className="text-3xl font-bold mb-6 text-foreground">Map</h1>
         <p className="text-md text-zinc-600 dark:text-zinc-400 mb-6">
-          This is a map representing the detected Cloudflare colocation centers
-          and the number of load balancers detected in each colocation center.
-          Data is based on initial measurments and does not adapt to newly
-          discovered load balancers through the tool provided here.
+          This is a map representing the detected number of load balancers
+          detected in each country and colocation center. Data is based on
+          initial measurments and does not adapt to newly discovered load
+          balancers through the tool provided here.
         </p>
         <iframe
-          src="https://www.google.com/maps/d/u/0/embed?mid=1sr53r4ETbnh1vTBYsPPWMw4CAq7Xraw&ehbc=2E312F&noprof=1"
-          style={{ width: "100%", height: "700px" }}
+          title="Cloudflare Load Balancer Instances"
+          aria-label="Choropleth map"
+          id="datawrapper-chart-ENfmK"
+          src="https://datawrapper.dwcdn.net/ENfmK/1/"
+          data-external="1"
+          scrolling="no"
+          style={{
+            width: "100%",
+            height: "700px",
+            background: "white",
+            padding: 20,
+          }}
         ></iframe>
 
-        <h1 className="text-3xl font-bold mb-6 text-foreground mt-6">All Data</h1>
+        <iframe
+          title="Cloudflare Co-Location Center LB Instances"
+          aria-label="Symbol map"
+          id="datawrapper-chart-4YWX0"
+          src="https://datawrapper.dwcdn.net/4YWX0/1/"
+          data-external="1"
+          scrolling="no"
+          style={{
+            width: "100%",
+            height: "700px",
+            background: "white",
+            padding: 20,
+            marginTop: 10,
+          }}
+        ></iframe>
+
+        <h1 className="text-3xl font-bold mb-6 text-foreground mt-6">
+          All Data
+        </h1>
         <LoadBalancerTable />
 
         <button
