@@ -55,7 +55,6 @@ export default function Home() {
             width: "100%",
             height: "700px",
             background: "white",
-            padding: 20,
           }}
         ></iframe>
 
@@ -70,7 +69,6 @@ export default function Home() {
             width: "100%",
             height: "700px",
             background: "white",
-            padding: 20,
             marginTop: 10,
           }}
         ></iframe>
