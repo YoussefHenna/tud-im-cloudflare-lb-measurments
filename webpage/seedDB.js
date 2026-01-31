@@ -10,7 +10,7 @@ const client = new PrismaClient({ adapter });
 const CHUNK_SIZE = 50000;
 
 const seedDB = async () => {
-  const csvContents = await fs.readFile("../data/full_scan.csv", "utf8");
+  const csvContents = await fs.readFile("../data/all_combined.csv", "utf8");
 
   console.log("Parsing CSV...");
 

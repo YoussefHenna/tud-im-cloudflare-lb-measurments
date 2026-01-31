@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const DATA_DIR = path.join(__dirname, "..", "data", "full_scan_raw");
+const DATA_DIR = path.join(__dirname, "..", "data");
 const OUTPUT_FILE = path.join(__dirname, "combined.csv");
 
 function main() {
