@@ -18,10 +18,6 @@ async function createMeasurement(
   location: ProbeLocation,
   outputFile: string,
 ): Promise<string | null> {
-  console.log(
-    `Creating measurement for ${location.city} - ${location.network}...`,
-  );
-
   const measurement = await globalping.createMeasurement({
     type: "http",
     target: host,
@@ -67,13 +63,13 @@ async function collectFromLocation(
 ): Promise<void> {
   const probesOfLocation = location
     ? availableProbes.filter(
-        (probe) =>
-          probe.location.asn.toString() === location ||
-          probe.location.city === location ||
-          probe.location.country === location ||
-          probe.location.region === location ||
-          probe.location.continent === location,
-      )
+      (probe) =>
+        probe.location.asn.toString() === location ||
+        probe.location.city === location ||
+        probe.location.country === location ||
+        probe.location.region === location ||
+        probe.location.continent === location,
+    )
     : availableProbes;
 
   console.log(
@@ -84,31 +80,11 @@ async function collectFromLocation(
   let currentProbIndex = 0;
 
   while (currentProbIndex < probesOfLocation.length) {
-    const limits = await globalping.getLimits();
-    if (!limits.ok) {
-      console.warn("Failed to get limits, waiting 5s...");
-      await sleep(5000);
-      continue;
-    }
+    try {
+      const currentProbe = probesOfLocation[currentProbIndex];
+      currentProbIndex++;
 
-    const createLimit = limits.data.rateLimit.measurements.create;
-    let localRemaining = createLimit.remaining;
-
-    if (localRemaining <= 0) {
-      const wait = createLimit.reset + 1;
-      console.log(
-        `Rate limit reached (${requestsDone}/${probesOfLocation.length} done). Waiting ${wait}s...`,
-      );
-      await sleep(wait * 1000);
-      continue;
-    }
-
-    // Inner loop to consume available limits
-    while (localRemaining > 0 && currentProbIndex < probesOfLocation.length) {
-      try {
-        const currentProbe = probesOfLocation[currentProbIndex];
-        currentProbIndex++;
-
+      for (let i = 0; i < 10; i++) {
         const measurementID = await createMeasurement(
           globalping,
           host,
@@ -120,24 +96,15 @@ async function collectFromLocation(
           await sleep(5000);
           continue;
         }
-        requestsDone += 1;
-
-        if (
-          requestsDone % 10 === 0 ||
-          requestsDone === probesOfLocation.length
-        ) {
-          console.log(
-            `Progress for ${location}: ${requestsDone}/${probesOfLocation.length}`,
-          );
-        }
-
-        // Consume limit since we just created a measurement (or tried to)
-        localRemaining -= 1;
-      } catch (e) {
-        console.error("Error in batch loop:", e);
-        await sleep(1000);
-        localRemaining--;
       }
+      requestsDone += 1;
+
+      console.log(
+        `Progress: ${requestsDone}/${probesOfLocation.length}`,
+      );
+    } catch (e) {
+      console.error("Error in batch loop:", e);
+      await sleep(1000);
     }
   }
 }

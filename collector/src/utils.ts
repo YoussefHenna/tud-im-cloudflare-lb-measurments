@@ -26,6 +26,8 @@ export function parseTraceResult(result: string): CollectorResult {
     clientAsn: null,
     clientNetwork: null,
 
+    httpCode: null,
+
     latencyTotal: null,
     latencyDNS: null,
     latencyTCP: null,
@@ -99,6 +101,7 @@ export function saveResultsToCsv(
     "clientCity",
     "clientAsn",
     "clientNetwork",
+    "httpCode",
     "latencyTotal",
     "latencyDNS",
     "latencyTCP",
@@ -134,7 +137,7 @@ export function getArgs(): Args {
   };
 }
 
-export const CLOUDFLARE_LB_PATH = "/cdn-cgi/trace";
+export const CLOUDFLARE_LB_PATH = "/";
 /*
 From GlobalPing docs:
 - HTTP: HTTP/1.1 without TLS
@@ -171,7 +174,7 @@ export async function processMeasurementResults(
 
       if (httpResult.status !== "finished") {
         throw new Error(
-          `Measurement (${measurementId}) did not finish: ${httpResult.status}`,
+          `Measurement (${measurementId}) did not finish: ${httpResult.status} (${httpResult.rawOutput})`,
         );
       }
 
@@ -182,13 +185,42 @@ export async function processMeasurementResults(
         );
       }
 
-      const traceResult = parseTraceResult(body);
+      const traceResult: CollectorResult = {
+        timestamp: null,
+
+        balancerId: null,
+        balancerIp: null,
+        clientIpAccordingCloudflare: null,
+        clientCountryAccordingCloudflare: null,
+        balancerColocationCenter: null,
+
+        targetDomain: null,
+        scheme: null,
+        httpVersion: null,
+        tlsVersion: null,
+
+        clientCountry: null,
+        clientCity: null,
+        clientAsn: null,
+        clientNetwork: null,
+
+        httpCode: null,
+
+        latencyTotal: null,
+        latencyDNS: null,
+        latencyTCP: null,
+        latencyTLS: null,
+        latencyFirstByte: null,
+        latencyDownload: null,
+      };
       traceResult.balancerIp = httpResult.resolvedAddress;
 
       traceResult.clientCountry = probeInfo.country;
       traceResult.clientCity = probeInfo.city;
       traceResult.clientAsn = String(probeInfo.asn);
       traceResult.clientNetwork = probeInfo.network;
+
+      traceResult.httpCode = String(httpResult.statusCode);
 
       traceResult.latencyTotal = String(httpResult.timings.total);
       traceResult.latencyDNS = String(httpResult.timings.dns);

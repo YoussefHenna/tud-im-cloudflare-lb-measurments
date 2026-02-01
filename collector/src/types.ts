@@ -17,6 +17,8 @@ export interface CollectorResult {
   clientAsn: string | null;
   clientNetwork: string | null;
 
+  httpCode: string | null;
+
   latencyTotal: string | null;
   latencyDNS: string | null; // Time to lookup domain name
   latencyTCP: string | null; // Time to establish TCP connection
