@@ -1,14 +1,6 @@
 # TU Dresden Internet Measurements: Cloudflare Load Balancer Analysis
 
-This project investigates the behavior, distribution, and performance of Cloudflare's edge network load balancers. By leveraging the unified `/cdn-cgi/trace` debug endpoint across various domains and vantage points, we aim to map load balancer assignments and connection characteristics.
-
-## Research Objectives
-
-We aim to collect a comprehensive dataset to answer the following questions:
-
-- **Balancer Variance**: Do different domains (e.g., `chatgpt.com`, `cloudflare.com`, `claude.ai`) resolving to the same PoP use different load balancer pools?
-- **Geographic Mapping**: How do specific Anycast IPs and colocation centers (Colos) map to specific load balancers (`fl` ID)?
-- **Protocol Adoption**: Are there differences in how requests are handled across HTTP/1.1, HTTP/2, and HTTP/3?
+This project investigates the behavior, distribution, and performance of Cloudflare's edge network load balancers. By leveraging the unified `/cdn-cgi/trace` debug endpoint across various domains and vantage points, we aim to map load balancer assignments and connection characteristics. Full report will be made available soon
 
 ## Methodology
 
@@ -51,6 +43,16 @@ We employ a hybrid measurement strategy to maximize coverage:
     - **Scope**: High-frequency checks from the local network.
     - **Protocols**: HTTP/3 (QUIC), HTTP/2, HTTP/1.1.
     - **Advantages**: No rate limits, comprehensive protocol support.
+
+## Folder Structure
+
+| Folder       | Description                                                                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `analysis/`  | Jupyter notebooks and supporting CSVs for data analysis — covers balancer distribution, colocation mapping, anycast prefixes, distance calculations, and map visualizations. |
+| `collector/` | JavaScript/TypeScript measurement tool that collects `/cdn-cgi/trace` data from Cloudflare-fronted domains, both locally and via GlobalPing.                                 |
+| `combine/`   | Utility scripts for merging and fixing raw CSV result files into unified combined datasets.                                                                                  |
+| `data/`      | Raw and combined measurement datasets (CSV) including regional, global, full-scan, and Google DNS results.                                                                   |
+| `webpage/`   | Next.js web application for visualizing the collected data and running browser-based measurements.                                                                           |
 
 ## Implementation
 
@@ -116,6 +118,8 @@ Standard `globalPing` selects one probe on the region and runs all request on th
 
 Sequential mode `npm run run:globalPingSeq` will run through all probes of the regions sequentially, each run/request from another probe. Use sequantial to uncover more load balancer across the region, use standard for more targeted discovery of a single LB.
 
+Full Scan mode `npm run run:globalPingFullScan` will run through all probes until no more new LB instance ID's are discovered. Maximizes the most possible coverage. This is meant to be used when a large amount of Globalping credits is available since it will take a while to complete.
+
 ### Data Output
 
 All responses are parsed, flattened, and appended to a **CSV file** for easy analysis. Timestamped files saved in `results/*` directory from where the script is called from
@@ -123,16 +127,26 @@ All responses are parsed, flattened, and appended to a **CSV file** for easy ana
 **CSV Header Columns (ordered):**
 | Field | Description |
 |------------------|----------------------------|
-| balancerId | Load balancer ID |
-| host | Hostname |
-| clientIp | Client IP Address |
 | timestamp | Request timestamp |
+| balancerId | Load balancer ID |
+| balancerIp | Load balancer IP |
+| clientIpAccordingCloudflare | Client IP (as per Cloudflare) |
+| clientCountryAccordingCloudflare | Client country (as per Cloudflare) |
+| balancerColocationCenter | Load balancer colocation center |
+| targetDomain | Target domain |
 | scheme | Connection scheme |
-| userAgent | User Agent string |
-| colocationCenter | Data center/colocation ID |
-| httpVersion | HTTP Version used |
-| clientCountry | Country of client |
-| tlsVersion | TLS Version |
+| httpVersion | HTTP version used |
+| tlsVersion | TLS version used |
+| clientCountry | Client country |
+| clientCity | Client city |
+| clientAsn | Client ASN |
+| clientNetwork | Client network |
+| latencyTotal | Total latency (ms) |
+| latencyDNS | DNS latency (ms) |
+| latencyTCP | TCP connect latency (ms) |
+| latencyTLS | TLS handshake latency (ms) |
+| latencyFirstByte | Time to first byte (ms) |
+| latencyDownload | Download latency (ms) |
 
 ### Web Tool
 
@@ -147,6 +161,10 @@ Under the `webpage` directory there is a simple webpage that allows displaying a
 - Run `npm run prisma:generate` to generate types from the DB schema.
 - Run using `npm run dev`
 
-### Fresh Database
+#### Fresh Database
 
 If starting from a fresh database, run `npm run prisma:migrate` to add the required tables to your database. Then run `npm run prisma:generate` again to ensure types are properly generated
+
+#### Seed database
+
+The provided `seedDB.js` script can seed a given database from the given csv data
