@@ -46,13 +46,13 @@ We employ a hybrid measurement strategy to maximize coverage:
 
 ## Folder Structure
 
-| Folder       | Description                                                                                                                                                                  |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `analysis/`  | Jupyter notebooks and supporting CSVs for data analysis — covers balancer distribution, colocation mapping, anycast prefixes, distance calculations, and map visualizations. |
-| `collector/` | JavaScript/TypeScript measurement tool that collects `/cdn-cgi/trace` data from Cloudflare-fronted domains, both locally and via GlobalPing.                                 |
-| `combine/`   | Utility scripts for merging and fixing raw CSV result files into unified combined datasets.                                                                                  |
-| `data/`      | Raw and combined measurement datasets (CSV) including regional, global, full-scan, and Google DNS results.                                                                   |
-| `webpage/`   | Next.js web application for visualizing the collected data and running browser-based measurements.                                                                           |
+| Folder       | Description                                                                                                                                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `analysis/`  | Jupyter notebooks and supporting CSVs for data analysis — covers balancer distribution, colocation mapping, anycast prefixes, distance calculations, and map visualizations.        |
+| `collector/` | JavaScript/TypeScript measurement tool that collects `/cdn-cgi/trace` data from Cloudflare-fronted domains, both locally and via GlobalPing.                                        |
+| `combine/`   | Utility scripts for merging and fixing raw CSV result files into unified combined datasets.                                                                                         |
+| `data/`      | Raw and combined measurement datasets (CSV) including regional, global, full-scan, and Google DNS results. Hosted with Git LFS, so will need to be checkout with it to get the csvs |
+| `webpage/`   | Next.js web application for visualizing the collected data and running browser-based measurements.                                                                                  |
 
 ## Implementation
 
